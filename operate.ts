@@ -1,178 +1,203 @@
-import { serve } from "https://deno.land/std@0.224.0/http/server.ts";  
-import { serveFile } from "https://deno.land/std@0.224.0/http/file_server.ts";  
-import { loginWithAuthToken } from "jsr:@evex/linejs@2.1.5";  
-import { MemoryStorage } from "jsr:@evex/linejs@2.1.5/storage";  
-  
-console.log("[INFO] LINE 操作サーバー起動...");  
-  
-let clientCache = new Map<string, any>();  
-  
-async function getOrCreateClient(authToken: string, refreshToken?: string) {  
-  const cacheKey = `${authToken}_${refreshToken || 'no-refresh'}`;  
-    
-  if (clientCache.has(cacheKey)) {  
-    return clientCache.get(cacheKey);  
-  }  
-  
-  // メモリストレージを使用（永続化しない）  
-  const storage = new MemoryStorage();  
-    
-  // refreshTokenが送信された場合はメモリストレージに設定  
-  if (refreshToken) {  
-    console.log("[INFO] refreshTokenを受信しました。メモリに設定します。");  
-    await storage.set("refreshToken", refreshToken);  
-  }  
-  
-  const client = await loginWithAuthToken(authToken, {  
-    device: "DESKTOPWIN",  
-    storage,  
-  });  
-  
-  // authToken更新時のハンドリング  
-  client.base.on("update:authtoken", async (newToken) => {  
-    console.log("[INFO] authTokenが更新されました:", newToken);  
-      
-    // 古いキャッシュを削除  
-    clientCache.delete(cacheKey);  
-      
-    // 新しいキーでキャッシュを更新  
-    const newCacheKey = `${newToken}_${refreshToken || 'no-refresh'}`;  
-    clientCache.set(newCacheKey, client);  
-  });  
-  
-  // refreshToken更新時のハンドリング  
-  client.base.on("update:refreshtoken", async (newRefreshToken) => {  
-    console.log("[INFO] refreshTokenが更新されました:", newRefreshToken);  
-    // メモリストレージのみに保存  
-    await storage.set("refreshToken", newRefreshToken);  
-  });  
-  
-  clientCache.set(cacheKey, client);  
-  return client;  
-}  
-  
-serve(async (req) => {  
-  const url = new URL(req.url);  
-  const pathname = url.pathname;  
-  console.log("[REQUEST]", req.method, pathname);  
-  
-  if (req.method === "GET" && (pathname === "/" || pathname.endsWith(".html"))) {  
-    const filePath = pathname === "/" ? "./control.html" : `.${pathname}`;  
-    try {  
-      return await serveFile(req, filePath);  
-    } catch {  
-      return new Response("ファイルが見つかりません", { status: 404 });  
-    }  
-  }  
-  
-  if (req.method === "POST") {  
-    const body = await req.json();  
-    const authToken = body.authToken || body.token;  
-    const refreshToken = body.refreshToken;  
-    const action = body.action;  
-    const text = body.text ?? "デフォルトメッセージ";  
-    const squareChatMid = body.squareChatMid ?? "";  
-  
-    if (!authToken || !action) {  
-      return new Response(JSON.stringify({  
-        error: "authTokenとactionは必須です"  
-      }), {   
-        status: 400,  
-        headers: { "Content-Type": "application/json" }  
-      });  
-    }  
-  
-    try {  
-      const client = await getOrCreateClient(authToken, refreshToken);  
-        
-      // 現在の有効なauthTokenを取得  
-      const currentToken = client.base.authToken;  
-      const currentRefreshToken = await client.base.storage.get("refreshToken");  
-  
-      if (action === "squares") {  
-        const chats = await client.fetchJoinedSquareChats();  
-        const result = chats.map(c => ({  
-          squareChatMid: c.raw.squareChatMid,  
-          name: c.raw.name,  
-        }));  
-        return new Response(JSON.stringify({   
-          result,   
-          updatedAuthToken: currentToken,  
-          updatedRefreshToken: currentRefreshToken,  
-          tokenChanged: currentToken !== authToken   
-        }), {  
-          headers: { "Content-Type": "application/json" },  
-        });  
-      } else if (action === "send") {  
-        await client.base.square.sendMessage({ squareChatMid, text });  
-        return new Response(JSON.stringify({   
-          message: "メッセージを送信しました",   
-          updatedAuthToken: currentToken,  
-          updatedRefreshToken: currentRefreshToken,  
-          tokenChanged: currentToken !== authToken   
-        }), {  
-          headers: { "Content-Type": "application/json" },  
-        });  
-      } else if (action === "messages") {  
-        const response = await client.base.square.fetchSquareChatEvents({  
-          squareChatMid,  
-          limit: 150,  
-        });  
-  const squareChat = await client.getSquareChat(squareChatMid);
-const members = await squareChat.getMembers();
-const squareMemberMid = "pf3fcbab652071dc24b8f565c96306dcb"
-try{
-const findMember = members.find(member => member.squareMemberMid === squareMemberMid);
-console.log(findMember);
-}catch(e){}
-        return new Response(JSON.stringify({   
-          events: response.events,   
-          updatedAuthToken: currentToken,  
-          updatedRefreshToken: currentRefreshToken,  
-          tokenChanged: currentToken !== authToken   
-        }, (_, v) => typeof v === "bigint" ? v.toString() : v), {  
-          headers: { "Content-Type": "application/json" },  
-        });  
-      } else {  
-        return new Response(JSON.stringify({  
-          error: "不明なアクション"  
-        }), {   
-          status: 400,  
-          headers: { "Content-Type": "application/json" }  
-        });  
-      }  
-    } catch (e) {  
-      console.error("エラー:", e);  
-  
-      // 認証エラーの場合  
-      if (e.message?.includes("MUST_REFRESH_V3_TOKEN") ||   
-          e.message?.includes("AUTHENTICATION_FAILED") ||  
-          e.message?.includes("INVALID_TOKEN")) {  
-          
-        // キャッシュをクリア  
-        const cacheKey = `${authToken}_${refreshToken || 'no-refresh'}`;  
-        clientCache.delete(cacheKey);  
-          
-        return new Response(JSON.stringify({  
-          error: "認証エラー",  
-          message: "トークンの有効期限が切れています。新しいトークンでログインしてください。",  
-          needsReauth: true  
-        }), {   
-          status: 401,  
-          headers: { "Content-Type": "application/json" }  
-        });  
-      }  
-  
-      return new Response(JSON.stringify({  
-        error: "処理エラー",  
-        message: "処理中にエラーが発生しました",  
-        details: e.message  
-      }), {   
-        status: 500,  
-        headers: { "Content-Type": "application/json" }  
-      });  
-    }  
-  }  
-  
-  return new Response("Not Found", { status: 404 });  
-}, { port: 8000 });
+import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import {
+  loginWithAuthToken,
+  loginWithRefreshToken,
+} from "jsr:@evex/linejs/auth";
+import type { ActionResult } from "jsr:@evex/linejs";
+import {
+  SquareMemberRole,
+  SquareMembershipState,
+} from "jsr:@evex/linejs/base/square";
+
+serve(async (req: Request): Promise<Response> => {
+  try {
+    const url = new URL(req.url);
+    const body = await req.json();
+    const token = body.token as string;
+    const refreshToken = body.refreshToken as string | undefined;
+    const action = body.action as string;
+
+    let client: ActionResult["client"];
+    let updatedAuthToken: string | undefined = undefined;
+    let updatedRefreshToken: string | undefined = undefined;
+    let tokenChanged = false;
+
+    if (refreshToken) {
+      const refreshed = await loginWithRefreshToken(refreshToken, {
+        device: "DESKTOPWIN",
+      });
+      client = refreshed.client;
+      updatedAuthToken = refreshed.authToken;
+      updatedRefreshToken = refreshed.refreshToken;
+      tokenChanged = true;
+    } else {
+      const loggedIn = await loginWithAuthToken(token, {
+        device: "DESKTOPWIN",
+      });
+      client = loggedIn.client;
+    }
+
+    if (action === "squares") {
+      const squares = await client.base.square.listJoinedSquares({});
+      return Response.json({
+        result: squares.squares,
+        updatedAuthToken,
+        updatedRefreshToken,
+        tokenChanged,
+      });
+    }
+
+    if (action === "messages") {
+      const squareChatMid = body.squareChatMid as string;
+      const data = await client.base.square.listSquareChatMessages({
+        squareChatMid,
+        limit: 20,
+        withReadCount: true,
+      });
+
+      const profiles: Record<string, any> = {};
+      for (const e of data.events) {
+        const msg =
+          e.payload?.receiveMessage?.squareMessage?.message ??
+          e.payload?.sendMessage?.squareMessage?.message;
+        if (msg?.from && !(msg.from in profiles)) {
+          try {
+            const profile = await client.base.square.getJoinedSquareMember({
+              squareChatMid,
+              mid: msg.from,
+            });
+            profiles[msg.from] = profile.member?.profile || null;
+          } catch (err) {
+            console.warn(`プロフィール取得失敗: ${msg.from}`);
+            profiles[msg.from] = null;
+          }
+        }
+      }
+
+      return Response.json({
+        events: data.events,
+        profiles,
+        updatedAuthToken,
+        updatedRefreshToken,
+        tokenChanged,
+      });
+    }
+
+    if (action === "send") {
+      const squareChatMid = body.squareChatMid as string;
+      const text = body.text as string;
+
+      const msg = await client.base.square.sendSquareMessage({
+        squareChatMid,
+        message: { text },
+      });
+
+      return Response.json({ message: msg });
+    }
+
+    if (action === "updateRole") {
+      const squareMid = body.squareMid as string;
+      const squareMemberMid = body.squareMemberMid as string;
+      const role = body.role as keyof typeof SquareMemberRole;
+
+      const result = await client.base.square.updateSquareMember({
+        request: {
+          updatedAttrs: ["ROLE"],
+          squareMember: {
+            squareMemberMid,
+            squareMid,
+            membershipState: "JOINED",
+            revision: 1,
+            role: SquareMemberRole[role],
+          },
+        },
+      });
+
+      return Response.json({ result });
+    }
+
+    if (action === "kick") {
+      const squareMid = body.squareMid as string;
+      const squareMemberMid = body.squareMemberMid as string;
+
+      const result = await client.base.square.updateSquareMember({
+        request: {
+          updatedAttrs: ["STATE"],
+          squareMember: {
+            squareMemberMid,
+            squareMid,
+            membershipState: SquareMembershipState.KICKED,
+            revision: 1,
+          },
+        },
+      });
+
+      return Response.json({ result });
+    }
+
+    if (action === "acceptJoin") {
+      const squareMid = body.squareMid as string;
+      const joinReqMid = body.squareMemberMid as string;
+
+      const result = await client.base.square.acceptSquareJoinRequests({
+        squareMid,
+        squareMemberMids: [joinReqMid],
+      });
+
+      return Response.json({ result });
+    }
+
+    if (action === "rejectJoin") {
+      const squareMid = body.squareMid as string;
+      const joinReqMid = body.squareMemberMid as string;
+
+      const result = await client.base.square.rejectSquareJoinRequests({
+        squareMid,
+        squareMemberMids: [joinReqMid],
+      });
+
+      return Response.json({ result });
+    }
+
+    if (action === "getMember") {
+      const squareChatMid = body.squareChatMid as string;
+      const mid = body.mid as string;
+
+      const profile = await client.base.square.getJoinedSquareMember({
+        squareChatMid,
+        mid,
+      });
+
+      return Response.json({ profile });
+    }
+
+    if (action === "listMembers") {
+      const squareChatMid = body.squareChatMid as string;
+      const result = await client.base.square.getSquareMembersByRange({
+        squareChatMid,
+        range: {
+          start: 0,
+          limit: 100,
+        },
+      });
+
+      return Response.json({ members: result.members });
+    }
+
+    if (action === "listJoinRequests") {
+      const squareMid = body.squareMid as string;
+      const result = await client.base.square.getSquareMemberJoinRequestList({
+        squareMid,
+        limit: 100,
+        withProfile: true,
+      });
+
+      return Response.json({ requests: result.requests });
+    }
+
+    return new Response("未知のアクション", { status: 400 });
+  } catch (e) {
+    console.error("サーバーエラー:", e);
+    return new Response("サーバーエラー", { status: 500 });
+  }
+});
