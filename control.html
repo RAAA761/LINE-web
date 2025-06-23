@@ -191,38 +191,22 @@
   }
 </style>
 </head>  
-<body>  
-  <h1>LINE OpenChat 操作ページ ver0.89</h1>  
-  <div id="container">  
-    <div id="leftPane">  
-      <div id="loginArea">  
-        <label>  
-          AuthToken:  
-          <input type="text" id="token" placeholder="ここにAuthTokenを貼り付け" />  
-          refreshToken:  
-          <input type="text" id="refreshtoken" placeholder="ここにRefreshTokenを貼り付け" />  
-        </label>  
-        <button id="login">ログイン</button>  
-      </div>  
-      <div id="chatButtons" tabindex="0"></div>  
-      <button id="loadMessages" disabled>過去メッセージ取得</button>  
-      <span id="messageCount" style="margin-left: 8px;">0件</span>  
-    </div>  
-
-    <div id="rightPaneWrapper">
-      <div id="chatHeader">選択中のOpenChatは未選択です</div>
-      <div id="rightPane" tabindex="0"></div>
-      <div id="sendArea">
-        <label>メッセージ内容:
-          <textarea id="message" placeholder="送信したい内容を入力"></textarea>
-        </label>
-        <button id="send" disabled>メッセージ送信</button>
-      </div>
+<body>
+  <h1>LINE OpenChat 操作ページ ver0.89</h1>
+  <div id="toggleButtons">
+    <button class="toggle-button" onclick="showPane('left')">選択画面</button>
+    <button class="toggle-button" onclick="showPane('right')">メッセージ画面</button>
+  </div>
+  <div id="container">
+    <div id="leftPane" class="show">
+      <!-- 選択画面の内容 -->
     </div>
-  </div>  
+    <div id="rightPaneWrapper">
+      <!-- メッセージ画面の内容 -->
+    </div>
+  </div>
 
-<script>
-const tokenInput = document.getElementById("token");
+  <script>
 const refreshTokenInput = document.getElementById("refreshtoken");
 const loginButton = document.getElementById("login");
 const chatButtons = document.getElementById("chatButtons");
@@ -232,6 +216,18 @@ const loadMessagesButton = document.getElementById("loadMessages");
 const result = document.getElementById("rightPane");
 let selectedChatMid = null;
 let lastMessageIds = new Set();
+
+    function showPane(pane) {
+      const leftPane = document.getElementById('leftPane');
+      const rightPaneWrapper = document.getElementById('rightPaneWrapper');
+      if (pane === 'left') {
+        leftPane.classList.add('show');
+        rightPaneWrapper.classList.remove('show');
+      } else if (pane === 'right') {
+        leftPane.classList.remove('show');
+        rightPaneWrapper.classList.add('show');
+      }
+    }
 
 function formatDeliveredTime(deliveredTime) {
   if (!deliveredTime) return "";
