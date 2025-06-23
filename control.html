@@ -3,163 +3,193 @@
 <head>  
   <meta charset="UTF-8" />  
   <title>LINE OpenChat 操作UI</title>  
-  <style>
-    body {
-      font-family: "Helvetica Neue", sans-serif;
-      margin: 0;
-      height: 100vh;
-      box-sizing: border-box;
-      background: #f8f9fa;
-    }
+<style>
+  /* 共通のスタイル */
+  body {
+    font-family: "Helvetica Neue", sans-serif;
+    margin: 0;
+    height: 100vh;
+    box-sizing: border-box;
+    background: #f8f9fa;
+    font-size: 1em; /* 基本のフォントサイズ */
+  }
 
+  #container {
+    display: flex;
+    height: 100vh;
+  }
+
+  #leftPane {
+    background: #ffffff;
+    border-right: 1px solid #ccc;
+    padding: 20px;
+    box-shadow: 2px 0 4px rgba(0, 0, 0, 0.05);
+    overflow-y: auto;
+  }
+
+  #chatButtons {
+    margin-top: 10px;
+    overflow-y: auto;
+  }
+
+  .chat-button {
+    display: block;
+    margin: 5px 0;
+    padding: 10px;
+    background: #eef3ff;
+    border: none;
+    border-radius: 8px;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.2s ease;
+  }
+
+  .chat-button:hover {
+    background: #dde7ff;
+  }
+
+  #rightPaneWrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: #f0f2f5;
+  }
+
+  #chatHeader {
+    padding: 10px 20px;
+    font-size: 1.1em;
+    font-weight: bold;
+    border-bottom: 1px solid #ccc;
+    background: #fff;
+  }
+
+  #rightPane {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .message {
+    max-width: 75%;
+    padding: 10px;
+    border-radius: 16px;
+    word-break: break-word;
+    white-space: pre-wrap;
+    position: relative;
+    font-size: 0.95em;
+    line-height: 1.4;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  }
+
+  .message.right {
+    align-self: flex-end;
+    background: #dcf8c6;
+  }
+
+  .message.left {
+    align-self: flex-start;
+  }
+
+  #sendArea {
+    background: #fff;
+    border-top: 1px solid #ccc;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  #sendArea textarea {
+    width: 100%;
+    height: 60px;
+    font-size: 1em;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #ccc;
+    resize: vertical;
+  }
+
+  #sendArea button {
+    margin-top: 8px;
+    font-size: 1em;
+    padding: 10px;
+    background: #4f92ff;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+  }
+
+  #sendArea button:hover {
+    background: #3878db;
+  }
+
+  /* スマホ版スタイル */
+  @media screen and (max-width: 768px) {
     #container {
+      flex-direction: column;
+    }
+
+    #leftPane,
+    #rightPaneWrapper {
+      width: 100%;
+      height: calc(100vh - 50px);
+      display: none; /* 初期状態で非表示 */
+    }
+
+    #leftPane.show,
+    #rightPaneWrapper.show {
+      display: block; /* 表示状態 */
+    }
+
+    #toggleButtons {
       display: flex;
-      height: 100vh;
+      justify-content: space-around;
+      background: #4f92ff;
+      color: white;
+      padding: 10px;
     }
 
-    #leftPane {
-      flex: 0 0 300px;
-      background: #ffffff;
-      border-right: 1px solid #ccc;
-      padding: 20px;
-      box-shadow: 2px 0 4px rgba(0, 0, 0, 0.05);
-      overflow-y: auto;
+    .toggle-button {
+      font-size: 1.2em;
+      padding: 10px;
+      cursor: pointer;
     }
 
-    #chatButtons {
-      margin-top: 10px;
-      overflow-y: auto;
-      max-height: 60vh;
+    body {
+      font-size: 1.2em; /* フォントサイズを拡大 */
     }
 
     .chat-button {
-      display: block;
-      margin: 5px 0;
-      padding: 10px;
-      background: #eef3ff;
-      border: none;
-      border-radius: 8px;
-      text-align: left;
-      cursor: pointer;
-      transition: background 0.2s ease;
+      font-size: 1.2em; /* ボタンのサイズを拡大 */
     }
 
-    .chat-button:hover {
-      background: #dde7ff;
-    }
-
-    #rightPaneWrapper {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      background: #f0f2f5;
-    }
-
-    #chatHeader {
-      padding: 10px 20px;
-      font-size: 1.1em;
-      font-weight: bold;
-      border-bottom: 1px solid #ccc;
-      background: #fff;
-    }
-
-    #rightPane {
-      flex: 1;
-      padding: 20px;
-      overflow-y: auto;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .message {
-      display: flex;
-      max-width: 75%;
-      padding: 10px;
-      border-radius: 16px;
-      word-break: break-word;
-      white-space: pre-wrap;
-      position: relative;
-      font-size: 0.95em;
-      line-height: 1.4;
-      background: #fff;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-    }
-
-    .message.right {
-      align-self: flex-end;
-      background: #dcf8c6;
-    }
-
-    .message.left {
-      align-self: flex-start;
-    }
-
-    .message .meta {
-      font-size: 0.75em;
-      color: #666;
-      margin-top: 4px;
-      display: block;
-    }
-
-    .reply-preview {
-      font-size: 0.75em;
-      color: #444;
-      border-left: 3px solid #ccc;
-      padding-left: 6px;
-      margin-bottom: 6px;
-      cursor: pointer;
-    }
-
-    #sendArea {
-      background: #fff;
-      border-top: 1px solid #ccc;
-      padding: 10px;
-      display: flex;
-      flex-direction: column;
-    }
-
-    #sendArea textarea {
-      width: 100%;
-      height: 60px;
-      font-size: 1em;
-      padding: 10px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
-      resize: vertical;
-    }
-
+    #sendArea textarea,
     #sendArea button {
-      margin-top: 8px;
-      font-size: 1em;
-      padding: 10px;
-      background: #4f92ff;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: background 0.2s ease;
+      font-size: 1.2em; /* 入力エリアと送信ボタンのサイズを拡大 */
+    }
+  }
+
+  /* パソコン版スタイル */
+  @media screen and (min-width: 769px) {
+    #container {
+      flex-direction: row;
     }
 
-    #sendArea button:hover {
-      background: #3878db;
+    #leftPane,
+    #rightPaneWrapper {
+      display: block;
     }
 
-    .profile-icon {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      margin-right: 8px;
-      object-fit: cover;
-      vertical-align: middle;
+    #toggleButtons {
+      display: none; /* パソコン版では切り替えボタンを非表示 */
     }
-
-    .profile-header {
-      display: flex;
-      align-items: center;
-      margin-bottom: 4px;
-    }
-  </style>
+  }
+</style>
 </head>  
 <body>  
   <h1>LINE OpenChat 操作ページ ver0.89</h1>  
