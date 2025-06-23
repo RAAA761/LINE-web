@@ -8,7 +8,7 @@ import {
   SquareMemberRole,
   SquareMembershipState,
 } from "jsr:@evex/linejs/base/square";
-
+　
 serve(async (req: Request): Promise<Response> => {
   try {
     const url = new URL(req.url);
