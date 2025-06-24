@@ -396,7 +396,39 @@ if (profile && isReceive) {
   nameSpan.textContent = displayName || from;   
   headerDiv.appendChild(nameSpan);  
     
-  msgDiv.appendChild(headerDiv);  
+  const wrapper = document.createElement("div");
+wrapper.className = "message-wrapper";
+wrapper.style.display = "flex";
+wrapper.style.flexDirection = "column";
+wrapper.style.alignItems = isSend ? "flex-end" : "flex-start";
+wrapper.style.gap = "2px";
+
+// プロフィール表示（吹き出しの外側）
+if (profile && isReceive) {
+  const headerDiv = document.createElement("div");
+  headerDiv.className = "profile-header";
+  headerDiv.style.display = "flex";
+  headerDiv.style.alignItems = "center";
+  headerDiv.style.gap = "6px";
+
+  if (pictureStatus) {
+    const iconImg = document.createElement("img");
+    iconImg.src = `https://obs.line-scdn.net/${pictureStatus}/preview`;
+    iconImg.className = "profile-icon";
+    iconImg.onerror = () => { iconImg.style.display = "none"; };
+    headerDiv.appendChild(iconImg);
+  }
+
+  const nameSpan = document.createElement("span");
+  nameSpan.textContent = displayName;
+  headerDiv.appendChild(nameSpan);
+
+  wrapper.appendChild(headerDiv); // ← 吹き出しの外側に追加
+}
+
+wrapper.appendChild(msgDiv);
+chatContent.appendChild(wrapper);
+ 
 }
   
       // リプライ対応  
