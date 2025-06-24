@@ -204,43 +204,103 @@ serve(async (req) => {
         }), {    
           headers: { "Content-Type": "application/json" },    
         });    
-      } else if (action === "send") {    
-        await client.base.square.sendMessage({ squareChatMid, text });    
-        return new Response(JSON.stringify({     
-          message: "メッセージを送信しました",     
-          updatedAuthToken: currentToken,    
-          updatedRefreshToken: currentRefreshToken,    
-          tokenChanged: currentToken !== authToken,    
-          refreshTokenProvided: !!refreshToken    
-        }), {    
-          headers: { "Content-Type": "application/json" },    
-        });    
-} else if (action === "messages") {  
-  console.log("[DEBUG] messages アクション開始");  
-  const response = await client.base.square.fetchSquareChatEvents({    
-    squareChatMid,    
-    limit: 150,    
-  });    
-  
-  console.log("[DEBUG] fetchSquareChatEvents 完了, events数:", response.events?.length || 0);  
-  
-  // pidを抽出    
-  const pids = extractPidsFromEvents(response.events);    
+    } else if (action === "send") {      
+        await client.base.square.sendMessage({ squareChatMid, text });      
+        return new Response(JSON.stringify({       
+          message: "メッセージを送信しました",       
+          updatedAuthToken: currentToken,      
+          updatedRefreshToken: currentRefreshToken,      
+          tokenChanged: currentToken !== authToken,      
+          refreshTokenProvided: !!refreshToken      
+        }), {      
+          headers: { "Content-Type": "application/json" },      
+        });      
+      } else if (action === "replyToMessage") {  
+        const relatedMessageId = body.relatedMessageId;  
+        if (!relatedMessageId) {  
+          return new Response(JSON.stringify({  
+            error: "relatedMessageIdは必須です"  
+          }), {  
+            status: 400,  
+            headers: { "Content-Type": "application/json" }  
+          });  
+        }  
+          
+        await client.base.square.sendMessage({   
+          squareChatMid,   
+          text,  
+          relatedMessageId   
+        });  
+          
+        return new Response(JSON.stringify({  
+          message: "リプライメッセージを送信しました",  
+          updatedAuthToken: currentToken,  
+          updatedRefreshToken: currentRefreshToken,  
+          tokenChanged: currentToken !== authToken,  
+          refreshTokenProvided: !!refreshToken  
+        }), {  
+          headers: { "Content-Type": "application/json" },  
+        });  
+} else if (action === "messages") {      
+  console.log("[DEBUG] messages アクション開始");      
+  const response = await client.base.square.fetchSquareChatEvents({        
+    squareChatMid,        
+    limit: 150,        
+  });        
       
-  // プロフィール情報を取得（squareChatMidを渡す）  
-  console.log("[DEBUG] プロフィール取得開始");  
-  const profiles = await getSquareMemberProfiles(client, pids, squareChatMid);    
-  console.log("[DEBUG] プロフィール取得完了");  
-  
-  return new Response(JSON.stringify({     
-    events: response.events,     
-    profiles: Object.fromEntries(profiles),  
-    updatedAuthToken: currentToken,    
-    updatedRefreshToken: currentRefreshToken,    
-    tokenChanged: currentToken !== authToken,    
-    refreshTokenProvided: !!refreshToken    
-  }, (_, v) => typeof v === "bigint" ? v.toString() : v), {    
-    headers: { "Content-Type": "application/json" },    
+  console.log("[DEBUG] fetchSquareChatEvents 完了, events数:", response.events?.length || 0);      
+      
+  // pidを抽出        
+  const pids = extractPidsFromEvents(response.events);        
+          
+  // プロフィール情報を取得（squareChatMidを渡す）      
+  console.log("[DEBUG] プロフィール取得開始");      
+  const profiles = await getSquareMemberProfiles(client, pids, squareChatMid);        
+  console.log("[DEBUG] プロフィール取得完了");      
+      
+// 画像メッセージのBase64データを取得  
+const eventsWithImageData = await Promise.all(response.events.map(async (event) => {  
+  const msg = event.payload?.receiveMessage?.squareMessage?.message  
+           ?? event.payload?.sendMessage?.squareMessage?.message;  
+      
+  if (msg && msg.contentType === 1) { // IMAGE content type  
+    try {  
+      const file = await client.base.obs.downloadMessageData({  
+        messageId: msg.id,  
+        isPreview: true,  
+        isSquare: true  
+      });  
+      const arrayBuffer = await file.arrayBuffer();  
+        
+      // DenoではBufferの代わりにbtoa()を使用  
+      const uint8Array = new Uint8Array(arrayBuffer);  
+      const binaryString = Array.from(uint8Array, byte => String.fromCharCode(byte)).join('');  
+      const base64 = btoa(binaryString);  
+        
+      const mimeType = file.type || 'image/jpeg';  
+        
+      return {  
+        ...event,  
+        imageData: `data:${mimeType};base64,${base64}`,  
+        isImage: true  
+      };  
+    } catch (error) {  
+      console.error("[DEBUG] 画像取得エラー:", error);  
+      return event;  
+    }  
+  }  
+  return event;  
+}));
+      
+  return new Response(JSON.stringify({         
+    events: eventsWithImageData,         
+    profiles: Object.fromEntries(profiles),      
+    updatedAuthToken: currentToken,        
+    updatedRefreshToken: currentRefreshToken,        
+    tokenChanged: currentToken !== authToken,        
+    refreshTokenProvided: !!refreshToken        
+  }, (_, v) => typeof v === "bigint" ? v.toString() : v), {        
+    headers: { "Content-Type": "application/json" },        
   });
       }    
     } catch (e) {    

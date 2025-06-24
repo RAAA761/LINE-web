@@ -13,18 +13,6 @@
     overflow: hidden;
   }
 
-#token{
-  display:none;
-}
-#refreshtoken{
-  display: none;
-}
-#login{
-  display:none;
-}
-#loginarea{
-  display: none;
-}
   #container {
     display: flex;
     height: 100vh;
@@ -123,6 +111,13 @@
     display: block;
   }
 
+  .message-time {
+  align-self: flex-start; /* または flex-end (送信者向け) */
+}
+.message.right + .message-time {
+  align-self: flex-end;
+}
+
   .reply-preview {
     font-size: 0.75em;
     color: #444;
@@ -189,6 +184,12 @@
 <div id="rightPaneWrapper">
   <div id="chatHeader">選択中のOpenChatは未選択です</div>
   <div id="rightPane" tabindex="0"></div>
+  <div id="replyBox" style="display:none; background:#f1f1f1; padding:6px 10px; border-left:3px solid #888;">
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+    <span id="replyPreviewText" style="font-size:0.85em; color:#333;"></span>
+    <button id="cancelReply" style="background:none; border:none; font-size:1em; color:#888; cursor:pointer;">✕</button>
+  </div>
+</div>
   <div id="sendArea">
     <label>メッセージ内容:
       <textarea id="message" placeholder="送信したい内容を入力"></textarea>
@@ -208,15 +209,15 @@ const loadMessagesButton = document.getElementById("loadMessages");
 const result = document.getElementById("rightPane");  
 let selectedChatMid = null;  
 let lastMessageIds = new Set();  
+let replyingToId = null;
   
 // deliveredTimeを時:分:秒形式に変換  
 function formatDeliveredTime(deliveredTime) {  
   if (!deliveredTime) return "";  
   const date = new Date(Number(deliveredTime));  
   const hours = String(date.getHours()).padStart(2, '0');  
-  const minutes = String(date.getMinutes()).padStart(2, '0');  
-  const seconds = String(date.getSeconds()).padStart(2, '0');  
-  return `${hours}:${minutes}:${seconds}`;  
+  const minutes = String(date.getMinutes()).padStart(2, '0');    
+  return `${hours}:${minutes}`;  
 }  
   
 // 汎用API呼び出し（refreshTokenも送信、updatedTokenがあれば自動更新）  
@@ -263,14 +264,18 @@ loginButton.onclick = async () => {
   
   try {  
     const data = await callApi({ token, action: "squares" });  
-  
-    chatButtons.innerHTML = "";  
-    selectedChatMid = null;  
-    sendButton.disabled = true;  
-    loadMessagesButton.disabled = true;  
-    result.textContent = "";  
+ 
+
+    chatButtons.innerHTML = "";
+    selectedChatMid = null;
+    sendButton.disabled = true;
+    loadMessagesButton.disabled = true;
+    result.textContent = "";
   
     if (Array.isArray(data.result)) {  
+      tokenInput.style.display = "none";
+      refreshTokenInput.style.display = "none";
+      loginButton.style.display = "none";
       for (const chat of data.result) {  
         const btn = document.createElement("button");  
         btn.className = "chat-button";  
@@ -338,139 +343,139 @@ async function loadMessages(token, chatMid, scrollToBottom = false) {
       result.innerHTML = '<div id="chatContent" style="display:flex; flex-direction:column; gap:6px;"></div>';  
     }  
     const chatContent = document.getElementById("chatContent");  
-  
-    // 新着メッセージをDOMに追加  
-    for (const e of newEvents) {  
-      const isReceive = e.type === "RECEIVE_MESSAGE";  
-      const isSend = e.type === "SEND_MESSAGE";  
-        
-      // msgDataの定義を最初に行う  
-      const msgData = e.payload?.receiveMessage?.squareMessage?.message   
-                   ?? e.payload?.sendMessage?.squareMessage?.message;  
-      if (!msgData) continue;  
-  
-      // fromの定義をmsgDataの後に行う  
-      const from = msgData.from || msgData._from || "?";  
-      const text = msgData.text?.trim() || "";  
-      const id = msgData.id;  
-      const deliveredTime = msgData.deliveredTime;  
-  
-      // プロフィール情報を取得  
-      const profile = data.profiles?.[from];  
-      console.log(`ユーザー ${from} のプロフィール:`, profile);  
-        
-      const displayName = profile?.displayName || from;  
-      const pictureStatus = profile?.pictureStatus;  
-  
-      const msgDiv = document.createElement("div");  
-      msgDiv.style.maxWidth = "80%";  
-      msgDiv.style.padding = "6px 10px";  
-      msgDiv.style.borderRadius = "10px";  
-      msgDiv.style.wordBreak = "break-word";  
-      msgDiv.style.whiteSpace = "pre-wrap";  
-      msgDiv.dataset.messageId = id;  
-  
-// プロフィール情報がある場合はアイコンと名前を表示  
-if (profile && isReceive) {  
-  const headerDiv = document.createElement("div");  
-  headerDiv.className = "profile-header";  
+   
+for (const e of newEvents) {  
+  const isReceive = e.type === "RECEIVE_MESSAGE";  
+  const isSend = e.type === "SEND_MESSAGE";  
     
-  // pictureStatus が存在する場合のみアイコンを表示  
-  if (pictureStatus) {  
-    const iconImg = document.createElement("img");  
-    iconImg.src = `https://obs.line-scdn.net/${pictureStatus}/preview`;  
-    iconImg.className = "profile-icon";  
-    iconImg.onerror = () => {  
-      console.warn(`アイコン画像の読み込みに失敗: ${pictureStatus}`);  
-      console.warn(`URL: ${iconImg.src}`);  
-      iconImg.style.display = "none"; // エラー時は非表示  
-    };  
-    iconImg.onload = () => {  
-      console.log(`アイコン画像の読み込み成功: ${pictureStatus}`);  
-    };  
-    headerDiv.appendChild(iconImg);  
-  }  
-    
-  const nameSpan = document.createElement("span");  
-  // displayName が undefined の場合でも from (pid) を表示  
-  nameSpan.textContent = displayName || from;   
-  headerDiv.appendChild(nameSpan);  
-    
-  const wrapper = document.createElement("div");
-wrapper.className = "message-wrapper";
-wrapper.style.display = "flex";
-wrapper.style.flexDirection = "column";
-wrapper.style.alignItems = isSend ? "flex-end" : "flex-start";
-wrapper.style.gap = "2px";
-
-// プロフィール表示（吹き出しの外側）
-if (profile && isReceive) {
-  const headerDiv = document.createElement("div");
-  headerDiv.className = "profile-header";
-  headerDiv.style.display = "flex";
-  headerDiv.style.alignItems = "center";
-  headerDiv.style.gap = "6px";
-
-  if (pictureStatus) {
-    const iconImg = document.createElement("img");
-    iconImg.src = `https://obs.line-scdn.net/${pictureStatus}/preview`;
-    iconImg.className = "profile-icon";
-    iconImg.onerror = () => { iconImg.style.display = "none"; };
-    headerDiv.appendChild(iconImg);
-  }
-
-  const nameSpan = document.createElement("span");
-  nameSpan.textContent = displayName;
-  headerDiv.appendChild(nameSpan);
-
-  wrapper.appendChild(headerDiv); // ← 吹き出しの外側に追加
-}
-
-wrapper.appendChild(msgDiv);
-chatContent.appendChild(wrapper);
- 
-}
+  const msgData = e.payload?.receiveMessage?.squareMessage?.message  
+               ?? e.payload?.sendMessage?.squareMessage?.message;  
+  if (!msgData) continue;  
   
-      // リプライ対応  
-      if (msgData.messageRelationType === "REPLY" && msgData.relatedMessageId) {  
-        const replyMsgElem = chatContent.querySelector(`[data-message-id="${msgData.relatedMessageId}"]`);  
-        if (replyMsgElem) {  
-          const replyPreview = document.createElement("div");  
-          replyPreview.className = "reply-preview";  
-          replyPreview.textContent = replyMsgElem.textContent.slice(0, 30) + (replyMsgElem.textContent.length > 30 ? "..." : "");  
-          replyPreview.onclick = () => {  
-            replyMsgElem.scrollIntoView({ behavior: "smooth", block: "center" });  
-          };  
-          msgDiv.appendChild(replyPreview);  
-        }  
-      } 
-
-      // 送信メッセージは右寄せ＆色違い  
-      if (isSend) {  
-        msgDiv.style.alignSelf = "flex-end";  
-        msgDiv.style.backgroundColor = "#DCF8C6";  
-        msgDiv.style.color = "#000";  
-      } else {  
-        msgDiv.style.alignSelf = "flex-start";  
-        msgDiv.style.backgroundColor = "#fff";  
-        msgDiv.style.color = "#000";  
-      }  
+  const from = msgData.from || msgData._from || "?";  
+  const text = msgData.text?.trim() || "";  
+  const id = msgData.id;  
+  const deliveredTime = msgData.deliveredTime;  
+  const contentType = msgData.contentType;  
   
-      // 本文テキスト  
-      const textNode = document.createElement("div");  
-      textNode.textContent = text || "その他";  
-      msgDiv.appendChild(textNode);  
+  const profile = data.profiles?.[from];  
+  const displayName = profile?.displayName || from;  
+  const pictureStatus = profile?.pictureStatus;  
   
-      // 時刻表示  
-      if (deliveredTime) {  
-        const timeDiv = document.createElement("div");  
-        timeDiv.className = "message-time";  
-        timeDiv.textContent = formatDeliveredTime(deliveredTime);  
-        msgDiv.appendChild(timeDiv);  
-      }  
+  const wrapper = document.createElement("div");  
+  wrapper.className = "message-wrapper";  
+  wrapper.style.display = "flex";  
+  wrapper.style.flexDirection = "column";  
+  wrapper.style.alignItems = isSend ? "flex-end" : "flex-start";  
+  wrapper.style.gap = "2px";  
   
-      chatContent.appendChild(msgDiv);  
+  // プロフィール表示（受信時のみ）  
+  if (profile && isReceive) {  
+    const headerDiv = document.createElement("div");  
+    headerDiv.className = "profile-header";  
+    headerDiv.style.display = "flex";  
+    headerDiv.style.alignItems = "center";  
+    headerDiv.style.gap = "6px";  
+  
+    if (pictureStatus) {  
+      const iconImg = document.createElement("img");  
+      iconImg.src = `https://obs.line-scdn.net/${pictureStatus}/preview`;  
+      iconImg.className = "profile-icon";  
+      iconImg.onerror = () => { iconImg.style.display = "none"; };  
+      headerDiv.appendChild(iconImg);  
     }  
+  
+    const nameSpan = document.createElement("span");  
+    nameSpan.textContent = displayName;  
+    headerDiv.appendChild(nameSpan);  
+  
+    wrapper.appendChild(headerDiv);  
+  }  
+  
+  const msgDiv = document.createElement("div");  
+  msgDiv.className = `message ${isSend ? "right" : "left"}`;  
+  msgDiv.dataset.messageId = id;  
+  msgDiv.style.display = "flex";  
+  msgDiv.style.flexDirection = "column";  
+  msgDiv.style.alignItems = "flex-start";  
+  msgDiv.style.gap = "4px";  
+  
+  msgDiv.onclick = () => {  
+    replyingToId = id;  
+    document.getElementById("replyBox").style.display = "block";  
+    document.getElementById("replyPreviewText").textContent = (text || "画像").slice(0, 30) + ((text.length > 30) ? "..." : "");  
+  };  
+  
+  if (msgData.messageRelationType === "REPLY" && msgData.relatedMessageId) {  
+    const replyMsgElem = document.querySelector(`[data-message-id="${msgData.relatedMessageId}"]`);  
+    if (replyMsgElem) {  
+      const replyPreview = document.createElement("div");  
+      replyPreview.className = "reply-preview";  
+      replyPreview.style.alignSelf = "stretch";  
+      const replyTextNode = [...replyMsgElem.childNodes].find(n => n.nodeType === Node.ELEMENT_NODE && n.textContent);  
+      replyPreview.textContent = replyTextNode?.textContent?.slice(0, 30) + (replyTextNode?.textContent?.length > 30 ? "..." : "");  
+      replyPreview.onclick = () => {  
+        replyMsgElem.scrollIntoView({ behavior: "smooth", block: "center" });  
+      };  
+      msgDiv.appendChild(replyPreview);  
+    }  
+  }  
+  
+  // 画像メッセージの場合    
+  if (contentType === 1 && e.imageData) {    
+    const imgElement = document.createElement("img");    
+    imgElement.src = e.imageData; // Base64データを直接使用  
+    imgElement.style.maxWidth = "200px";    
+    imgElement.style.maxHeight = "200px";    
+    imgElement.style.borderRadius = "8px";    
+    imgElement.style.cursor = "pointer";    
+    imgElement.onclick = (event) => {    
+      event.stopPropagation();  
+      // 拡大表示用のモーダルを作成  
+      const modal = document.createElement("div");  
+      modal.style.cssText = "position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.8);display:flex;justify-content:center;align-items:center;z-index:1000;";  
+      const largeImg = document.createElement("img");  
+      largeImg.src = e.imageData;  
+      largeImg.style.maxWidth = "90%";  
+      largeImg.style.maxHeight = "90%";  
+      modal.appendChild(largeImg);  
+      modal.onclick = () => document.body.removeChild(modal);  
+      document.body.appendChild(modal);  
+    };    
+    imgElement.onerror = () => {    
+      imgElement.style.display = "none";    
+      const errorText = document.createElement("div");    
+      errorText.textContent = "画像を読み込めませんでした";    
+      errorText.style.color = "#999";    
+      msgDiv.appendChild(errorText);    
+    };    
+    msgDiv.appendChild(imgElement);    
+  }
+  
+  // テキストメッセージの場合  
+  if (text || contentType === 0) {  
+    const textNode = document.createElement("div");  
+    textNode.textContent = text || "その他";  
+    textNode.style.alignSelf = "stretch";  
+    msgDiv.appendChild(textNode);  
+  }  
+  
+  wrapper.appendChild(msgDiv);  
+  
+  // 吹き出しの外に時間表示  
+  if (deliveredTime) {  
+    const timeDiv = document.createElement("div");  
+    timeDiv.className = "message-time";  
+    timeDiv.style.fontSize = "0.75em";  
+    timeDiv.style.color = "#666";  
+    timeDiv.style.marginTop = "2px";  
+    timeDiv.textContent = formatDeliveredTime(deliveredTime);  
+    wrapper.appendChild(timeDiv);  
+  }  
+  
+  chatContent.appendChild(wrapper);  
+}
+
   
     if (scrollToBottom) {  
       chatContent.lastElementChild?.scrollIntoView({ behavior: "smooth" });  
@@ -481,29 +486,78 @@ chatContent.appendChild(wrapper);
   }  
 }  
   
+  
+async function replyToMessage(relatedMessageId, text) {  
+  const token = tokenInput.value.trim();  
+  if (!token || !selectedChatMid || !text) {  
+    alert("必要な情報が不足しています");  
+    return;  
+  }  
+  
+  try {  
+    const data = await callApi({  
+      token,  
+      action: "replyToMessage",  
+      squareChatMid: selectedChatMid,  
+      text,  
+      relatedMessageId  
+    });  
+  
+    if (data.message) {  
+      console.log("リプライ送信成功:", data.message);  
+      await loadMessages(token, selectedChatMid, true);  
+    } else if (data.error) {  
+      alert(`エラー: ${data.message}`);  
+    }  
+  } catch (error) {  
+    console.error("リプライ送信エラー:", error);  
+    alert("リプライメッセージ送信に失敗しました");  
+  }  
+}  
+    
 sendButton.onclick = async () => {  
   const token = tokenInput.value.trim();  
   const text = messageInput.value.trim();  
   if (!token || !selectedChatMid || !text) return alert("全て入力してください");  
   
   try {  
-    const data = await callApi({ token, action: "send", squareChatMid: selectedChatMid, text });  
+    const body = {  
+      token,  
+      action: "send",  
+      squareChatMid: selectedChatMid,  
+      text,  
+    };  
   
-    if (data.message) {  
+    if (replyingToId) {  
+      replyToMessage(replyingToId, text);  
+      replyingToId = null;  
+      document.getElementById("replyBox").style.display = "none";  
       messageInput.value = "";  
-    } else if (data.error) {  
-      alert(`エラー: ${data.message}`);  
-    }  
-  } catch (error) {  
-    console.error("送信エラー:", error);  
-    alert("メッセージ送信に失敗しました");  
-  }  
-};  
+      return;  
+    }
+
+    const data = await callApi(body);
+    if (data.message) {
+      messageInput.value = "";
+    } else if (data.error) {
+      alert(`エラー: ${data.message}`);
+    }
+  } catch (error) {
+    console.error("送信エラー:", error);
+    alert("メッセージ送信に失敗しました");
+  }
+};
+
   
 loadMessagesButton.onclick = async () => {  
   if (!selectedChatMid) return alert("チャットを選択してください");  
   await loadMessages(tokenInput.value.trim(), selectedChatMid, true);  
 };  
+
+document.getElementById("cancelReply").onclick = () => {
+  replyingToId = null;
+  document.getElementById("replyBox").style.display = "none";
+};
   
 // URLパラメータから自動セット（tokenとrefreshToken両方対応）  
 window.addEventListener("DOMContentLoaded", () => {  
