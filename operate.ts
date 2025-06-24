@@ -1,8 +1,5 @@
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-import {
-  loginWithAuthToken,
-  loginWithRefreshToken,
-} from "jsr:@evex/linejs/auth";
+import { loginWithAuthToken} from "jsr:@evex/linejs/auth";
 import type { ActionResult } from "jsr:@evex/linejs";
 import {
   SquareMemberRole,
