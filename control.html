@@ -10,8 +10,19 @@
       height: 100vh;
       box-sizing: border-box;
       background: #f8f9fa;
+      overflow-y:hidden;
     }
-
+    
+    #token{
+      display:none
+    }
+    #refreshtoken{
+      display:none
+    }
+    
+    #login{
+      display: none;
+    }
     #container {
       display: flex;
       height: 100vh;
@@ -21,24 +32,25 @@
       flex: 0 0 300px;
       background: #ffffff;
       border-right: 1px solid #ccc;
-      padding: 20px;
+     
       box-shadow: 2px 0 4px rgba(0, 0, 0, 0.05);
       overflow-y: auto;
     }
 
     #chatButtons {
-      margin-top: 10px;
+      margin-top: 0px;
       overflow-y: auto;
-      max-height: 60vh;
+      max-height: 83vh;
     }
 
     .chat-button {
       display: block;
-      margin: 5px 0;
+      margin: 0px 0;
       padding: 10px;
       background: #eef3ff;
-      border: none;
-      border-radius: 8px;
+      border: gray 0.5px solid;
+      height:70px;
+      width: 100%;
       text-align: left;
       cursor: pointer;
       transition: background 0.2s ease;
@@ -120,7 +132,7 @@
     }
 
     #sendArea textarea {
-      width: 100%;
+      width: 98%;
       height: 60px;
       font-size: 1em;
       padding: 10px;
@@ -162,15 +174,15 @@
   </style>
 </head>  
 <body>  
-  <h1>LINE OpenChat 操作ページ ver0.89</h1>  
+ <!-- <h1>LINE OpenChat 操作ページ ver0.89</h1>  -->
   <div id="container">  
     <div id="leftPane">  
       <div id="loginArea">  
         <label>  
-          AuthToken:  
-          <input type="text" id="token" placeholder="ここにAuthTokenを貼り付け" />  
-          refreshToken:  
-          <input type="text" id="refreshtoken" placeholder="ここにRefreshTokenを貼り付け" />  
+            
+          <input type="text" id="token" placeholder=" AuthToken" />  
+           <br>
+          <input type="text" id="refreshtoken" placeholder=" RefreshToken " />  
         </label>  
         <button id="login">ログイン</button>  
       </div>  
@@ -183,8 +195,8 @@
       <div id="chatHeader">選択中のOpenChatは未選択です</div>
       <div id="rightPane" tabindex="0"></div>
       <div id="sendArea">
-        <label>メッセージ内容:
-          <textarea id="message" placeholder="送信したい内容を入力"></textarea>
+        <label>
+          <textarea id="message" placeholder="メッセージを入力"></textarea>
         </label>
         <button id="send" disabled>メッセージ送信</button>
       </div>
@@ -251,7 +263,7 @@ loginButton.onclick = async () => {
         btn.className = "chat-button";
         btn.textContent = `${chat.name} (${chat.squareChatMid.slice(0, 6)}...)`;
         btn.onclick = async () => {
-          document.getElementById("chatHeader").textContent = `選択中: ${chat.name}`;
+          document.getElementById("chatHeader").textContent = `${chat.name}`;
           selectedChatMid = chat.squareChatMid;
           sendButton.disabled = false;
           loadMessagesButton.disabled = false;
