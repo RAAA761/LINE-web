@@ -1,978 +1,445 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8" />
-  <title>LINE OpenChat 操作UI</title>
+<!DOCTYPE html>  
+<html lang="ja">  
+<head>  
+  <meta charset="UTF-8" />  
+  <title>LINE OpenChat 操作UI</title>  
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Yu Gothic", sans-serif;
-      background: #2c3e50;
-      color: #ffffff;
+      font-family: "Helvetica Neue", sans-serif;
+      margin: 0;
       height: 100vh;
-      overflow: hidden;
+      box-sizing: border-box;
+      background: #f8f9fa;
     }
 
-    /* トップバー */
-    .top-bar {
-      background: #34495e;
-      height: 40px;
+    #container {
       display: flex;
-      align-items: center;
-      padding: 0 16px;
-      border-bottom: 1px solid #3e4f66;
+      height: 100vh;
     }
 
-    .top-bar .tabs {
-      display: flex;
-      gap: 24px;
-    }
-
-    .top-bar .tab {
-      color: #95a5a6;
-      font-size: 14px;
-      cursor: pointer;
-      padding: 8px 0;
-      border-bottom: 2px solid transparent;
-      transition: all 0.2s;
-    }
-
-    .top-bar .tab.active {
-      color: #00c73c;
-      border-bottom-color: #00c73c;
-    }
-
-    .top-bar .tab:hover {
-      color: #ffffff;
-    }
-
-    /* メインコンテナ */
-    .main-container {
-      display: flex;
-      height: calc(100vh - 40px);
-    }
-
-    /* 左サイドバー */
-    .sidebar {
-      width: 320px;
-      background: #34495e;
-      border-right: 1px solid #3e4f66;
-      display: flex;
-      flex-direction: column;
-    }
-
-    /* 検索バー */
-    .search-bar {
-      padding: 12px 16px;
-      border-bottom: 1px solid #3e4f66;
-    }
-
-    .search-input {
-      width: 100%;
-      background: #2c3e50;
-      border: 1px solid #3e4f66;
-      border-radius: 20px;
-      padding: 8px 16px;
-      color: #ffffff;
-      font-size: 14px;
-    }
-
-    .search-input::placeholder {
-      color: #7f8c8d;
-    }
-
-    .search-input:focus {
-      outline: none;
-      border-color: #00c73c;
-    }
-
-    /* チャットリスト */
-    .chat-list {
-      flex: 1;
+    #leftPane {
+      flex: 0 0 300px;
+      background: #ffffff;
+      border-right: 1px solid #ccc;
+      padding: 20px;
+      box-shadow: 2px 0 4px rgba(0, 0, 0, 0.05);
       overflow-y: auto;
     }
 
-    .chat-item {
-      display: flex;
-      align-items: center;
-      padding: 12px 16px;
-      cursor: pointer;
-      border-bottom: 1px solid #3e4f66;
-      transition: background 0.2s;
+    #chatButtons {
+      margin-top: 10px;
+      overflow-y: auto;
+      max-height: 60vh;
     }
 
-    .chat-item:hover {
-      background: #3e4f66;
-    }
-
-    .chat-item.active {
-      background: #2c3e50;
-    }
-
-    .chat-avatar {
-      width: 48px;
-      height: 48px;
-      border-radius: 50%;
-      background: #7f8c8d;
-      margin-right: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      color: #ffffff;
-      flex-shrink: 0;
-    }
-
-    .chat-info {
-      flex: 1;
-      min-width: 0;
-    }
-
-    .chat-name {
-      font-size: 14px;
-      font-weight: 500;
-      color: #ffffff;
-      margin-bottom: 4px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .chat-preview {
-      font-size: 12px;
-      color: #7f8c8d;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .chat-meta {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-end;
-      margin-left: 8px;
-    }
-
-    .chat-time {
-      font-size: 11px;
-      color: #7f8c8d;
-      margin-bottom: 4px;
-    }
-
-    .chat-badge {
-      background: #00c73c;
-      color: #ffffff;
-      border-radius: 10px;
-      padding: 2px 6px;
-      font-size: 11px;
-      min-width: 18px;
-      text-align: center;
-    }
-
-    /* チャットエリア */
-    .chat-area {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      background: #2c3e50;
-    }
-
-    /* チャットヘッダー */
-    .chat-header {
-      background: #34495e;
-      padding: 12px 16px;
-      border-bottom: 1px solid #3e4f66;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .chat-header-left {
-      display: flex;
-      align-items: center;
-    }
-
-    .chat-header-avatar {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: #7f8c8d;
-      margin-right: 12px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 14px;
-      color: #ffffff;
-    }
-
-    .chat-header-info h3 {
-      font-size: 14px;
-      font-weight: 500;
-      color: #ffffff;
-      margin-bottom: 2px;
-    }
-
-    .chat-header-info p {
-      font-size: 12px;
-      color: #7f8c8d;
-    }
-
-    .chat-header-actions {
-      display: flex;
-      gap: 8px;
-    }
-
-    .header-button {
-      background: none;
+    .chat-button {
+      display: block;
+      margin: 5px 0;
+      padding: 10px;
+      background: #eef3ff;
       border: none;
-      color: #7f8c8d;
-      font-size: 18px;
+      border-radius: 8px;
+      text-align: left;
       cursor: pointer;
-      padding: 4px;
-      border-radius: 4px;
-      transition: all 0.2s;
+      transition: background 0.2s ease;
     }
 
-    .header-button:hover {
-      color: #ffffff;
-      background: #3e4f66;
+    .chat-button:hover {
+      background: #dde7ff;
     }
 
-    /* メッセージエリア */
-    .messages-container {
+    #rightPaneWrapper {
       flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: #f0f2f5;
+    }
+
+    #chatHeader {
+      padding: 10px 20px;
+      font-size: 1.1em;
+      font-weight: bold;
+      border-bottom: 1px solid #ccc;
+      background: #fff;
+    }
+
+    #rightPane {
+      flex: 1;
+      padding: 20px;
       overflow-y: auto;
-      padding: 16px;
-      background: #2c3e50;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
     }
 
     .message {
-      margin-bottom: 16px;
       display: flex;
-      align-items: flex-end;
+      max-width: 75%;
+      padding: 10px;
+      border-radius: 16px;
+      word-break: break-word;
+      white-space: pre-wrap;
+      position: relative;
+      font-size: 0.95em;
+      line-height: 1.4;
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     }
 
-    .message.sent {
-      justify-content: flex-end;
+    .message.right {
+      align-self: flex-end;
+      background: #dcf8c6;
     }
 
-    .message.received {
-      justify-content: flex-start;
+    .message.left {
+      align-self: flex-start;
     }
 
-    .message-avatar {
+    .message .meta {
+      font-size: 0.75em;
+      color: #666;
+      margin-top: 4px;
+      display: block;
+    }
+
+    .reply-preview {
+      font-size: 0.75em;
+      color: #444;
+      border-left: 3px solid #ccc;
+      padding-left: 6px;
+      margin-bottom: 6px;
+      cursor: pointer;
+    }
+
+    #sendArea {
+      background: #fff;
+      border-top: 1px solid #ccc;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #sendArea textarea {
+      width: 100%;
+      height: 60px;
+      font-size: 1em;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      resize: vertical;
+    }
+
+    #sendArea button {
+      margin-top: 8px;
+      font-size: 1em;
+      padding: 10px;
+      background: #4f92ff;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    #sendArea button:hover {
+      background: #3878db;
+    }
+
+    .profile-icon {
       width: 32px;
       height: 32px;
       border-radius: 50%;
-      background: #7f8c8d;
       margin-right: 8px;
+      object-fit: cover;
+      vertical-align: middle;
+    }
+
+    .profile-header {
       display: flex;
       align-items: center;
-      justify-content: center;
-      font-size: 12px;
-      color: #ffffff;
-      flex-shrink: 0;
-    }
-
-    .message.sent .message-avatar {
-      display: none;
-    }
-
-    .message-content {
-      max-width: 60%;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .message-sender {
-      font-size: 11px;
-      color: #7f8c8d;
       margin-bottom: 4px;
-      margin-left: 8px;
-    }
-
-    .message.sent .message-sender {
-      display: none;
-    }
-
-    .message-bubble {
-      padding: 12px 16px;
-      border-radius: 18px;
-      font-size: 14px;
-      line-height: 1.4;
-      word-wrap: break-word;
-      position: relative;
-    }
-
-    .message.received .message-bubble {
-      background: #34495e;
-      color: #ffffff;
-      border-bottom-left-radius: 4px;
-    }
-
-    .message.sent .message-bubble {
-      background: #00c73c;
-      color: #ffffff;
-      border-bottom-right-radius: 4px;
-    }
-
-    .message-time {
-      font-size: 10px;
-      color: #7f8c8d;
-      margin-top: 4px;
-      text-align: right;
-    }
-
-    .message.received .message-time {
-      text-align: left;
-      margin-left: 8px;
-    }
-
-    /* 入力エリア */
-    .input-area {
-      background: #34495e;
-      border-top: 1px solid #3e4f66;
-      padding: 12px 16px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .input-buttons {
-      display: flex;
-      gap: 8px;
-    }
-
-    .input-button {
-      background: none;
-      border: none;
-      color: #7f8c8d;
-      font-size: 20px;
-      cursor: pointer;
-      padding: 8px;
-      border-radius: 50%;
-      transition: all 0.2s;
-    }
-
-    .input-button:hover {
-      color: #ffffff;
-      background: #3e4f66;
-    }
-
-    .message-input {
-      flex: 1;
-      background: #2c3e50;
-      border: 1px solid #3e4f66;
-      border-radius: 20px;
-      padding: 10px 16px;
-      color: #ffffff;
-      font-size: 14px;
-      resize: none;
-      min-height: 20px;
-      max-height: 100px;
-    }
-
-    .message-input::placeholder {
-      color: #7f8c8d;
-    }
-
-    .message-input:focus {
-      outline: none;
-      border-color: #00c73c;
-    }
-
-    .send-button {
-      background: #00c73c;
-      border: none;
-      color: #ffffff;
-      font-size: 16px;
-      cursor: pointer;
-      padding: 8px 12px;
-      border-radius: 50%;
-      transition: all 0.2s;
-      width: 36px;
-      height: 36px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .send-button:hover {
-      background: #00a82d;
-    }
-
-    .send-button:disabled {
-      background: #7f8c8d;
-      cursor: not-allowed;
-    }
-
-    /* ログインモーダル */
-    .login-modal {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.8);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-    }
-
-    .login-form {
-      background: #34495e;
-      padding: 32px;
-      border-radius: 12px;
-      width: 400px;
-      max-width: 90%;
-    }
-
-    .login-form h2 {
-      color: #ffffff;
-      margin-bottom: 24px;
-      text-align: center;
-    }
-
-    .form-group {
-      margin-bottom: 16px;
-    }
-
-    .form-group label {
-      display: block;
-      color: #bdc3c7;
-      font-size: 14px;
-      margin-bottom: 8px;
-    }
-
-    .form-group input {
-      width: 100%;
-      background: #2c3e50;
-      border: 1px solid #3e4f66;
-      border-radius: 8px;
-      padding: 12px;
-      color: #ffffff;
-      font-size: 14px;
-    }
-
-    .form-group input:focus {
-      outline: none;
-      border-color: #00c73c;
-    }
-
-    .login-button {
-      width: 100%;
-      background: #00c73c;
-      border: none;
-      color: #ffffff;
-      padding: 12px;
-      border-radius: 8px;
-      font-size: 16px;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-
-    .login-button:hover {
-      background: #00a82d;
-    }
-
-    /* プレースホルダー */
-    .placeholder {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #7f8c8d;
-      font-size: 16px;
-    }
-
-    /* スクロールバー */
-    ::-webkit-scrollbar {
-      width: 6px;
-    }
-
-    ::-webkit-scrollbar-track {
-      background: #2c3e50;
-    }
-
-    ::-webkit-scrollbar-thumb {
-      background: #7f8c8d;
-      border-radius: 3px;
-    }
-
-    ::-webkit-scrollbar-thumb:hover {
-      background: #95a5a6;
-    }
-
-    .empty-state {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      color: #7f8c8d;
-      padding: 40px;
-      text-align: center;
-    }
-
-    .empty-state-icon {
-      font-size: 48px;
-      margin-bottom: 16px;
-      opacity: 0.5;
-    }
-
-    .empty-state h3 {
-      font-size: 18px;
-      margin-bottom: 8px;
-      color: #bdc3c7;
-    }
-
-    .empty-state p {
-      font-size: 14px;
-      line-height: 1.5;
     }
   </style>
-</head>
-<body>
-  <!-- ログインモーダル -->
-  <div id="loginModal" class="login-modal">
-    <div class="login-form">
-      <h2>LINE OpenChat にログイン</h2>
-      <div class="form-group">
-        <label for="authToken">AuthToken</label>
-        <input type="text" id="authToken" placeholder="AuthTokenを入力してください" />
-      </div>
-      <div class="form-group">
-        <label for="refreshToken">RefreshToken</label>
-        <input type="text" id="refreshToken" placeholder="RefreshTokenを入力してください（オプション）" />
-      </div>
-      <button id="loginButton" class="login-button">ログイン</button>
-    </div>
-  </div>
+</head>  
+<body>  
+  <h1>LINE OpenChat 操作ページ ver0.89</h1>  
+  <div id="container">  
+    <div id="leftPane">  
+      <div id="loginArea">  
+        <label>  
+          AuthToken:  
+          <input type="text" id="token" placeholder="ここにAuthTokenを貼り付け" />  
+          refreshToken:  
+          <input type="text" id="refreshtoken" placeholder="ここにRefreshTokenを貼り付け" />  
+        </label>  
+        <button id="login">ログイン</button>  
+      </div>  
+      <div id="chatButtons" tabindex="0"></div>  
+      <button id="loadMessages" disabled>過去メッセージ取得</button>  
+      <span id="messageCount" style="margin-left: 8px;">0件</span>  
+    </div>  
 
-  <!-- トップバー -->
-  <div class="top-bar">
-    <div class="tabs">
-      <div class="tab">すべて</div>
-      <div class="tab active">友だち</div>
-      <div class="tab">グループ</div>
-      <div class="tab">公式アカウント</div>
-    </div>
-  </div>
-
-  <!-- メインコンテナ -->
-  <div class="main-container">
-    <!-- サイドバー -->
-    <div class="sidebar">
-      <!-- 検索バー -->
-      <div class="search-bar">
-        <input type="text" class="search-input" placeholder="トークルーム検索" />
-      </div>
-
-      <!-- チャットリスト -->
-      <div id="chatList" class="chat-list">
-        <!-- チャットアイテムはJSで動的に追加 -->
+    <div id="rightPaneWrapper">
+      <div id="chatHeader">選択中のOpenChatは未選択です</div>
+      <div id="rightPane" tabindex="0"></div>
+      <div id="sendArea">
+        <label>メッセージ内容:
+          <textarea id="message" placeholder="送信したい内容を入力"></textarea>
+        </label>
+        <button id="send" disabled>メッセージ送信</button>
       </div>
     </div>
+  </div>  
 
-    <!-- チャットエリア -->
-    <div class="chat-area">
-      <!-- チャットが選択されていない場合の表示 -->
-      <div id="emptyState" class="empty-state">
-        <div class="empty-state-icon">💬</div>
-        <h3>トークルームを選択してください</h3>
-        <p>左のリストからトークルームを選択すると、<br>メッセージが表示されます。</p>
-      </div>
+<script>
+const tokenInput = document.getElementById("token");
+const refreshTokenInput = document.getElementById("refreshtoken");
+const loginButton = document.getElementById("login");
+const chatButtons = document.getElementById("chatButtons");
+const messageInput = document.getElementById("message");
+const sendButton = document.getElementById("send");
+const loadMessagesButton = document.getElementById("loadMessages");
+const result = document.getElementById("rightPane");
+let selectedChatMid = null;
+let lastMessageIds = new Set();
 
-      <!-- チャットヘッダー -->
-      <div id="chatHeader" class="chat-header" style="display: none;">
-        <div class="chat-header-left">
-          <div class="chat-header-avatar">🗨</div>
-          <div class="chat-header-info">
-            <h3 id="chatHeaderName">トークルーム名</h3>
-            <p id="chatHeaderStatus">オンライン</p>
-          </div>
-        </div>
-        <div class="chat-header-actions">
-          <button class="header-button" title="通話">📞</button>
-          <button class="header-button" title="ビデオ通話">📹</button>
-          <button class="header-button" title="メニュー">⋯</button>
-        </div>
-      </div>
+function formatDeliveredTime(deliveredTime) {
+  if (!deliveredTime) return "";
+  const date = new Date(Number(deliveredTime));
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const seconds = String(date.getSeconds()).padStart(2, '0');
+  return `${hours}:${minutes}:${seconds}`;
+}
 
-      <!-- メッセージコンテナ -->
-      <div id="messagesContainer" class="messages-container" style="display: none;">
-        <!-- メッセージはJSで動的に追加 -->
-      </div>
+async function callApi(body) {
+  const refreshToken = refreshTokenInput.value.trim();
+  let url = "/";
+  if (refreshToken) {
+    url += `?refreshToken=${encodeURIComponent(refreshToken)}`;
+    body.refreshToken = refreshToken;
+  }
 
-      <!-- 入力エリア -->
-      <div id="inputArea" class="input-area" style="display: none;">
-        <div class="input-buttons">
-          <button class="input-button" title="ファイル添付">📎</button>
-          <button class="input-button" title="写真・動画">📷</button>
-        </div>
-        <textarea id="messageInput" class="message-input" placeholder="メッセージを入力" rows="1"></textarea>
-        <button id="sendButton" class="send-button" disabled>➤</button>
-      </div>
-    </div>
-  </div>
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
 
-  <script>
-    // グローバル変数
-    let authToken = '';
-    let refreshToken = '';
-    let selectedChatMid = null;
-    let selectedChatName = '';
-    let lastMessageIds = new Set();
-    let pollingInterval = null;
-    let chats = [];
+  const data = await res.json();
+  if (data.updatedAuthToken) tokenInput.value = data.updatedAuthToken;
+  if (data.updatedRefreshToken) refreshTokenInput.value = data.updatedRefreshToken;
+  if (data.tokenChanged) console.log("トークンが更新されました");
+  return data;
+}
 
-    // DOM要素
-    const loginModal = document.getElementById('loginModal');
-    const authTokenInput = document.getElementById('authToken');
-    const refreshTokenInput = document.getElementById('refreshToken');
-    const loginButton = document.getElementById('loginButton');
-    const chatList = document.getElementById('chatList');
-    const emptyState = document.getElementById('emptyState');
-    const chatHeader = document.getElementById('chatHeader');
-    const chatHeaderName = document.getElementById('chatHeaderName');
-    const messagesContainer = document.getElementById('messagesContainer');
-    const inputArea = document.getElementById('inputArea');
-    const messageInput = document.getElementById('messageInput');
-    const sendButton = document.getElementById('sendButton');
+loginButton.onclick = async () => {
+  const token = tokenInput.value.trim();
+  if (!token) return alert("AuthTokenを入力してください");
 
-    // ユーティリティ関数
-    function formatTime(timestamp) {
-      if (!timestamp) return '';
-      const date = new Date(Number(timestamp));
-      const now = new Date();
-      const diff = now - date;
-      
-      if (diff < 24 * 60 * 60 * 1000) {
-        // 24時間以内は時:分で表示
-        return date.toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit' });
-      } else if (diff < 7 * 24 * 60 * 60 * 1000) {
-        // 1週間以内は曜日で表示
-        const days = ['日', '月', '火', '水', '木', '金', '土'];
-        return days[date.getDay()];
-      } else {
-        // それ以外は月/日で表示
-        return `${date.getMonth() + 1}/${date.getDate()}`;
+  try {
+    const data = await callApi({ token, action: "squares" });
+    chatButtons.innerHTML = "";
+    selectedChatMid = null;
+    sendButton.disabled = true;
+    loadMessagesButton.disabled = true;
+    result.textContent = "";
+
+    if (Array.isArray(data.result)) {
+      for (const chat of data.result) {
+        const btn = document.createElement("button");
+        btn.className = "chat-button";
+        btn.textContent = `${chat.name} (${chat.squareChatMid.slice(0, 6)}...)`;
+        btn.onclick = async () => {
+          document.getElementById("chatHeader").textContent = `選択中: ${chat.name}`;
+          selectedChatMid = chat.squareChatMid;
+          sendButton.disabled = false;
+          loadMessagesButton.disabled = false;
+          result.textContent = `選択中: ${chat.name}\n\n過去メッセージを取得中...`;
+          lastMessageIds.clear();
+          await loadMessages(tokenInput.value.trim(), selectedChatMid, true);
+        };
+        chatButtons.appendChild(btn);
       }
+    } else {
+      result.textContent = JSON.stringify(data.result, null, 2);
+    }
+  } catch (error) {
+    console.error("ログインエラー:", error);
+    alert("ログインに失敗しました");
+  }
+};
+
+async function loadMessages(token, chatMid, scrollToBottom = false) {
+  if (!token || !chatMid) return;
+
+  try {
+    const data = await callApi({ token, action: "messages", squareChatMid: chatMid });
+    if (data.error) {
+      result.textContent = `エラー: ${data.message}`;
+      return;
     }
 
-    function getInitials(name) {
-      if (!name) return '?';
-      return name.charAt(0).toUpperCase();
+    if (!Array.isArray(data.events)) {
+      result.textContent = "データが正しくありません";
+      console.error("Unexpected response format:", data);
+      return;
     }
 
-    // API呼び出し
-    async function callApi(body) {
-      let url = '/';
-      if (refreshToken) {
-        url += `?refreshToken=${encodeURIComponent(refreshToken)}`;
-        body.refreshToken = refreshToken;
-      }
-
-      const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
-
-      const data = await response.json();
-      
-      if (data.updatedAuthToken) {
-        authToken = data.updatedAuthToken;
-        authTokenInput.value = authToken;
-      }
-      if (data.updatedRefreshToken) {
-        refreshToken = data.updatedRefreshToken;
-        refreshTokenInput.value = refreshToken;
-      }
-
-      return data;
-    }
-
-    // ログイン処理
-    async function login() {
-      const token = authTokenInput.value.trim();
-      if (!token) {
-        alert('AuthTokenを入力してください');
-        return;
-      }
-
-      try {
-        loginButton.textContent = 'ログイン中...';
-        loginButton.disabled = true;
-
-        const data = await callApi({ 
-          token, 
-          action: 'squares',
-          refreshToken: refreshTokenInput.value.trim()
-        });
-
-        if (data.error) {
-          throw new Error(data.message || 'ログインに失敗しました');
-        }
-
-        authToken = token;
-        refreshToken = refreshTokenInput.value.trim();
-        chats = data.result || [];
-
-        // ログインモーダルを非表示
-        loginModal.style.display = 'none';
-
-        // チャットリストを更新
-        updateChatList();
-
-        // ポーリング開始
-        startPolling();
-
-      } catch (error) {
-        console.error('ログインエラー:', error);
-        alert(error.message || 'ログインに失敗しました');
-      } finally {
-        loginButton.textContent = 'ログイン';
-        loginButton.disabled = false;
-      }
-    }
-
-    // チャットリスト更新
-    function updateChatList() {
-      chatList.innerHTML = '';
-
-      chats.forEach(chat => {
-        const chatItem = document.createElement('div');
-        chatItem.className = 'chat-item';
-        chatItem.onclick = () => selectChat(chat);
-
-        chatItem.innerHTML = `
-          <div class="chat-avatar">${getInitials(chat.name)}</div>
-          <div class="chat-info">
-            <div class="chat-name">${chat.name}</div>
-            <div class="chat-preview">タップしてメッセージを確認</div>
-          </div>
-          <div class="chat-meta">
-            <div class="chat-time">今日</div>
-          </div>
-        `;
-
-        chatList.appendChild(chatItem);
-      });
-    }
-
-    // チャット選択
-    async function selectChat(chat) {
-      // 前の選択を解除
-      document.querySelectorAll('.chat-item').forEach(item => {
-        item.classList.remove('active');
-      });
-
-      // 新しい選択を設定
-      event.currentTarget.classList.add('active');
-      selectedChatMid = chat.squareChatMid;
-      selectedChatName = chat.name;
-
-      // UI更新
-      emptyState.style.display = 'none';
-      chatHeader.style.display = 'flex';
-      messagesContainer.style.display = 'block';
-      inputArea.style.display = 'flex';
-
-      chatHeaderName.textContent = chat.name;
-      messagesContainer.innerHTML = '';
-      lastMessageIds.clear();
-
-      // メッセージ送信ボタンを有効化
-      updateSendButton();
-
-      // メッセージ取得
-      await loadMessages(true);
-    }
-
-    // メッセージ読み込み
-    async function loadMessages(scrollToBottom = false) {
-      if (!authToken || !selectedChatMid) return;
-
-      try {
-        const data = await callApi({
-          token: authToken,
-          action: 'messages',
-          squareChatMid: selectedChatMid
-        });
-
-        if (data.error) {
-          console.error('メッセージ取得エラー:', data.message);
-          return;
-        }
-
-        if (!Array.isArray(data.events)) {
-          console.error('不正なデータ形式:', data);
-          return;
-        }
-
-        // 新しいメッセージのみフィルタ
-        const newEvents = data.events.filter(event => {
-          const message = event.payload?.receiveMessage?.squareMessage?.message || 
-                         event.payload?.sendMessage?.squareMessage?.message;
-          return message && !lastMessageIds.has(message.id);
-        });
-
-        // メッセージIDを記録
-        newEvents.forEach(event => {
-          const message = event.payload?.receiveMessage?.squareMessage?.message || 
-                         event.payload?.sendMessage?.squareMessage?.message;
-          if (message?.id) {
-            lastMessageIds.add(message.id);
-          }
-        });
-
-        // メッセージを表示
-        newEvents.forEach(event => {
-          displayMessage(event, data.profiles);
-        });
-
-        if (scrollToBottom && newEvents.length > 0) {
-          messagesContainer.scrollTop = messagesContainer.scrollHeight;
-        }
-
-      } catch (error) {
-        console.error('メッセージ取得エラー:', error);
-      }
-    }
-
-    // メッセージ表示
-    function displayMessage(event, profiles) {
-      const isReceived = event.type === 'RECEIVE_MESSAGE';
-      const message = event.payload?.receiveMessage?.squareMessage?.message || 
-                     event.payload?.sendMessage?.squareMessage?.message;
-
-      if (!message) return;
-
-      const messageElement = document.createElement('div');
-      messageElement.className = `message ${isReceived ? 'received' : 'sent'}`;
-
-      const from = message.from || message._from;
-      const profile = profiles?.[from];
-      const displayName = profile?.displayName || from || 'Unknown';
-      const text = message.text?.trim() || '';
-      const time = formatTime(message.deliveredTime);
-
-      let messageHTML = '';
-
-      if (isReceived) {
-        messageHTML = `
-          <div class="message-avatar">${getInitials(displayName)}</div>
-          <div class="message-content">
-            <div class="message-sender">${displayName}</div>
-            <div class="message-bubble">${text}</div>
-            <div class="message-time">${time}</div>
-          </div>
-        `;
-      } else {
-        messageHTML = `
-          <div class="message-content">
-            <div class="message-bubble">${text}</div>
-            <div class="message-time">${time}</div>
-          </div>
-        `;
-      }
-
-      messageElement.innerHTML = messageHTML;
-      messagesContainer.appendChild(messageElement);
-    }
-
-    // メッセージ送信
-    async function sendMessage() {
-      const text = messageInput.value.trim();
-      if (!text || !authToken || !selectedChatMid) return;
-
-      try {
-        sendButton.disabled = true;
-        sendButton.textContent = '⏳';
-
-        const data = await callApi({
-          token: authToken,
-          action: 'send',
-          squareChatMid: selectedChatMid,
-          text: text
-        });
-
-        if (data.error) {
-          throw new Error(data.message || 'メッセージ送信に失敗しました');
-        }
-
-        messageInput.value = '';
-        updateSendButton();
-
-        // 少し待ってからメッセージを再読み込み
-        setTimeout(() => loadMessages(true), 500);
-
-      } catch (error) {
-        console.error('送信エラー:', error);
-        alert(error.message || 'メッセージ送信に失敗しました');
-      } finally {
-        sendButton.disabled = false;
-        sendButton.textContent = '➤';
-      }
-    }
-
-    // 送信ボタンの状態更新
-    function updateSendButton() {
-      const hasText = messageInput.value.trim().length > 0;
-      const hasChat = selectedChatMid !== null;
-      sendButton.disabled = !hasText || !hasChat;
-    }
-
-    // ポーリング開始
-    function startPolling() {
-      if (pollingInterval) clearInterval(pollingInterval);
-      
-      pollingInterval = setInterval(() => {
-        if (selectedChatMid && authToken) {
-          const wasAtBottom = messagesContainer.scrollHeight - messagesContainer.scrollTop - messagesContainer.clientHeight < 50;
-          loadMessages(wasAtBottom);
-        }
-      }, 2000);
-    }
-
-    // イベントリスナー
-    loginButton.addEventListener('click', login);
-    sendButton.addEventListener('click', sendMessage);
-
-    messageInput.addEventListener('input', updateSendButton);
-    messageInput.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        sendMessage();
-      }
+    const newEvents = data.events.filter(e => {
+      const msg = e.payload?.receiveMessage?.squareMessage?.message ?? e.payload?.sendMessage?.squareMessage?.message;
+      return msg && !lastMessageIds.has(msg.id);
     });
 
-    // 初期化
-    window.addEventListener('DOMContentLoaded', () => {
-      // URLパラメータからトークンを取得
-      const urlParams = new URLSearchParams(window.location.search);
-      const tokenFromUrl = urlParams.get('token');
-      const refreshTokenFromUrl = urlParams.get('refreshToken') || urlParams.get('refresh_token');
-
-      if (tokenFromUrl) {
-        authTokenInput.value = tokenFromUrl;
-      }
-      if (refreshTokenFromUrl) {
-        refreshTokenInput.value = refreshTokenFromUrl;
-      }
-
-      // トークンがある場合は自動ログイン
-      if (tokenFromUrl) {
-        login();
-      }
+    newEvents.forEach(e => {
+      const msg = e.payload?.receiveMessage?.squareMessage?.message ?? e.payload?.sendMessage?.squareMessage?.message;
+      if (msg?.id) lastMessageIds.add(msg.id);
     });
-  </script>
-</body>
+
+    if (!document.getElementById("chatContent")) {
+      result.innerHTML = '<div id="chatContent" style="display:flex; flex-direction:column; gap:6px;"></div>';
+    }
+    const chatContent = document.getElementById("chatContent");
+
+    for (const e of newEvents) {
+      const isReceive = e.type === "RECEIVE_MESSAGE";
+      const isSend = e.type === "SEND_MESSAGE";
+      const msgData = e.payload?.receiveMessage?.squareMessage?.message ?? e.payload?.sendMessage?.squareMessage?.message;
+      if (!msgData) continue;
+
+      const from = msgData.from || msgData._from || "?";
+      const text = msgData.text?.trim() || "";
+      const id = msgData.id;
+      const deliveredTime = msgData.deliveredTime;
+
+      const profile = data.profiles?.[from];
+      const displayName = profile?.displayName || from;
+      const pictureStatus = profile?.pictureStatus;
+
+      const msgDiv = document.createElement("div");
+      msgDiv.style.maxWidth = "80%";
+      msgDiv.style.padding = "6px 10px";
+      msgDiv.style.borderRadius = "10px";
+      msgDiv.style.wordBreak = "break-word";
+      msgDiv.style.whiteSpace = "pre-wrap";
+      msgDiv.dataset.messageId = id;
+
+      if (profile && isReceive) {
+        const headerDiv = document.createElement("div");
+        headerDiv.className = "profile-header";
+
+        if (pictureStatus) {
+          const iconImg = document.createElement("img");
+          iconImg.src = `https://obs.line-scdn.net/${pictureStatus}/preview`;
+          iconImg.className = "profile-icon";
+          iconImg.onerror = () => iconImg.style.display = "none";
+          headerDiv.appendChild(iconImg);
+        }
+
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = displayName;
+        headerDiv.appendChild(nameSpan);
+        msgDiv.appendChild(headerDiv);
+      }
+
+      if (msgData.messageRelationType === "REPLY" && msgData.relatedMessageId) {
+        const replyMsgElem = chatContent.querySelector(`[data-message-id="${msgData.relatedMessageId}"]`);
+        if (replyMsgElem) {
+          const replyPreview = document.createElement("div");
+          replyPreview.className = "reply-preview";
+          replyPreview.textContent = replyMsgElem.textContent.slice(0, 30) + (replyMsgElem.textContent.length > 30 ? "..." : "");
+          replyPreview.onclick = () => {
+            replyMsgElem.scrollIntoView({ behavior: "smooth", block: "center" });
+          };
+          msgDiv.appendChild(replyPreview);
+        }
+      }
+
+      if (isSend) {
+        msgDiv.style.alignSelf = "flex-end";
+        msgDiv.style.backgroundColor = "#DCF8C6";
+        msgDiv.style.color = "#000";
+      } else {
+        msgDiv.style.alignSelf = "flex-start";
+        msgDiv.style.backgroundColor = "#fff";
+        msgDiv.style.color = "#000";
+      }
+
+      const textNode = document.createElement("div");
+      textNode.textContent = text;
+      msgDiv.appendChild(textNode);
+
+      if (deliveredTime) {
+        const timeDiv = document.createElement("div");
+        timeDiv.className = "message-time";
+        timeDiv.textContent = formatDeliveredTime(deliveredTime);
+        msgDiv.appendChild(timeDiv);
+      }
+
+      chatContent.appendChild(msgDiv);
+    }
+
+    if (scrollToBottom) {
+      chatContent.lastElementChild?.scrollIntoView({ behavior: "smooth" });
+    }
+  } catch (e) {
+    result.textContent = "メッセージ取得中にエラーが発生しました";
+    console.error(e);
+  }
+}
+
+sendButton.onclick = async () => {
+  const token = tokenInput.value.trim();
+  const text = messageInput.value.trim();
+  if (!token || !selectedChatMid || !text) return alert("全て入力してください");
+
+  try {
+    const data = await callApi({ token, action: "send", squareChatMid: selectedChatMid, text });
+    if (data.message) {
+      messageInput.value = "";
+    } else if (data.error) {
+      alert(`エラー: ${data.message}`);
+    }
+  } catch (error) {
+    console.error("送信エラー:", error);
+    alert("メッセージ送信に失敗しました");
+  }
+};
+
+loadMessagesButton.onclick = async () => {
+  if (!selectedChatMid) return alert("チャットを選択してください");
+  await loadMessages(tokenInput.value.trim(), selectedChatMid, true);
+};
+
+window.addEventListener("DOMContentLoaded", () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const tokenFromUrl = urlParams.get("token");
+  const refreshTokenFromUrl = urlParams.get("refreshToken") || urlParams.get("refresh_token");
+
+  if (tokenFromUrl) tokenInput.value = tokenFromUrl;
+  if (refreshTokenFromUrl) refreshTokenInput.value = refreshTokenFromUrl;
+  if (tokenFromUrl) loginButton.click();
+});
+
+let pollingInterval = null;
+
+function isScrolledToBottom() {
+  const el = document.getElementById("rightPane");
+  return el.scrollHeight - el.scrollTop - el.clientHeight < 5;
+}
+
+function startPolling() {
+  if (pollingInterval) clearInterval(pollingInterval);
+  pollingInterval = setInterval(() => {
+    const token = tokenInput.value.trim();
+    if (token && selectedChatMid) {
+      const autoScroll = isScrolledToBottom();
+      loadMessages(token, selectedChatMid, autoScroll);
+    }
+  }, 1000);
+}
+
+startPolling();
+</script>
+</body>  
 </html>
