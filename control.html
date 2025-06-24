@@ -1,18 +1,15 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-  <meta charset="UTF-8" />
-  <title>LINE</title>
+<!DOCTYPE html>  
+<html lang="ja">  
+<head>  
+  <meta charset="UTF-8" />  
+  <title>LINE OpenChat 操作UI</title>  
   <style>
-    * {
-      box-sizing: border-box;
-    }
-
     body {
+      font-family: "Helvetica Neue", sans-serif;
       margin: 0;
-      font-family: 'Helvetica Neue', 'Segoe UI', sans-serif;
-      background-color: #e5e5ea;
-      color: #000;
+      height: 100vh;
+      box-sizing: border-box;
+      background: #f8f9fa;
     }
 
     #container {
@@ -21,87 +18,54 @@
     }
 
     #leftPane {
-      width: 320px;
-      background-color: #fff;
-      border-right: 1px solid #ddd;
-      display: flex;
-      flex-direction: column;
-    }
-
-    #loginArea {
-      padding: 16px;
-      border-bottom: 1px solid #ddd;
-    }
-
-    #loginArea input {
-      width: 100%;
-      margin: 6px 0;
-      padding: 8px;
-      font-size: 14px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-    }
-
-    #loginArea button {
-      width: 100%;
-      padding: 10px;
-      font-size: 14px;
-      margin-top: 8px;
-      background-color: #0b93f6;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-    }
-
-    #chatButtons {
-      flex: 1;
+      flex: 0 0 300px;
+      background: #ffffff;
+      border-right: 1px solid #ccc;
+      padding: 20px;
+      box-shadow: 2px 0 4px rgba(0, 0, 0, 0.05);
       overflow-y: auto;
     }
 
+    #chatButtons {
+      margin-top: 10px;
+      overflow-y: auto;
+      max-height: 60vh;
+    }
+
     .chat-button {
-      display: flex;
-      flex-direction: column;
-      padding: 12px;
-      border-bottom: 1px solid #f0f0f0;
-      background: #fff;
+      display: block;
+      margin: 5px 0;
+      padding: 10px;
+      background: #eef3ff;
+      border: none;
+      border-radius: 8px;
+      text-align: left;
       cursor: pointer;
-      transition: background-color 0.2s;
+      transition: background 0.2s ease;
     }
 
     .chat-button:hover {
-      background: #f5f5f7;
-    }
-
-    .chat-title {
-      font-weight: bold;
-      font-size: 14px;
-    }
-
-    .chat-snippet {
-      font-size: 12px;
-      color: #666;
-      margin-top: 4px;
-    }
-
-    #leftPane button#loadMessages {
-      width: 100%;
-      padding: 10px;
-      border: none;
-      background: #ddd;
-      cursor: pointer;
+      background: #dde7ff;
     }
 
     #rightPaneWrapper {
       flex: 1;
       display: flex;
       flex-direction: column;
-      background: #f5f5f7;
+      background: #f0f2f5;
+    }
+
+    #chatHeader {
+      padding: 10px 20px;
+      font-size: 1.1em;
+      font-weight: bold;
+      border-bottom: 1px solid #ccc;
+      background: #fff;
     }
 
     #rightPane {
       flex: 1;
-      padding: 12px;
+      padding: 20px;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
@@ -109,205 +73,373 @@
     }
 
     .message {
-      max-width: 70%;
-      padding: 10px 14px;
-      border-radius: 18px;
-      font-size: 14px;
-      line-height: 1.4;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+      display: flex;
+      max-width: 75%;
+      padding: 10px;
+      border-radius: 16px;
+      word-break: break-word;
       white-space: pre-wrap;
+      position: relative;
+      font-size: 0.95em;
+      line-height: 1.4;
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     }
 
-    .sent-message {
+    .message.right {
       align-self: flex-end;
-      background: #0b93f6;
-      color: white;
-      border-bottom-right-radius: 0;
+      background: #dcf8c6;
     }
 
-    .received-message {
+    .message.left {
       align-self: flex-start;
-      background: #e5e5ea;
-      color: black;
-      border-bottom-left-radius: 0;
+    }
+
+    .message .meta {
+      font-size: 0.75em;
+      color: #666;
+      margin-top: 4px;
+      display: block;
+    }
+
+    .reply-preview {
+      font-size: 0.75em;
+      color: #444;
+      border-left: 3px solid #ccc;
+      padding-left: 6px;
+      margin-bottom: 6px;
+      cursor: pointer;
     }
 
     #sendArea {
-      padding: 10px;
       background: #fff;
       border-top: 1px solid #ccc;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
     }
 
     #sendArea textarea {
       width: 100%;
       height: 60px;
-      font-size: 14px;
-      padding: 8px;
-      border-radius: 6px;
+      font-size: 1em;
+      padding: 10px;
+      border-radius: 8px;
       border: 1px solid #ccc;
       resize: vertical;
     }
 
     #sendArea button {
       margin-top: 8px;
-      width: 100%;
+      font-size: 1em;
       padding: 10px;
-      font-size: 14px;
-      background: #0b93f6;
+      background: #4f92ff;
       color: white;
       border: none;
-      border-radius: 6px;
+      border-radius: 8px;
       cursor: pointer;
+      transition: background 0.2s ease;
     }
 
-    #messageCount {
-      display: block;
-      padding: 10px;
-      font-size: 13px;
-      color: #555;
-      background: #fafafa;
+    #sendArea button:hover {
+      background: #3878db;
+    }
+
+    .profile-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      margin-right: 8px;
+      object-fit: cover;
+      vertical-align: middle;
+    }
+
+    .profile-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 4px;
     }
   </style>
-</head>
-<body>
-  <div id="container">
-    <div id="leftPane">
-      <div id="loginArea">
-        <label>
-          <input type="text" id="token" placeholder="AuthToken" />
-          <input type="text" id="refreshtoken" placeholder="RefreshToken" />
-        </label>
-        <button id="login">ログイン</button>
-      </div>
-      <div id="chatButtons"></div>
-      <button id="loadMessages" disabled>メッセージ取得</button>
-      <span id="messageCount">0件</span>
-    </div>
+</head>  
+<body>  
+  <h1>LINE OpenChat 操作ページ ver0.89</h1>  
+  <div id="container">  
+    <div id="leftPane">  
+      <div id="loginArea">  
+        <label>  
+          AuthToken:  
+          <input type="text" id="token" placeholder="ここにAuthTokenを貼り付け" />  
+          refreshToken:  
+          <input type="text" id="refreshtoken" placeholder="ここにRefreshTokenを貼り付け" />  
+        </label>  
+        <button id="login">ログイン</button>  
+      </div>  
+      <div id="chatButtons" tabindex="0"></div>  
+      <button id="loadMessages" disabled>過去メッセージ取得</button>  
+      <span id="messageCount" style="margin-left: 8px;">0件</span>  
+    </div>  
 
     <div id="rightPaneWrapper">
-      <div id="rightPane" tabindex="0">ここにメッセージ履歴が表示されます</div>
+      <div id="chatHeader">選択中のOpenChatは未選択です</div>
+      <div id="rightPane" tabindex="0"></div>
       <div id="sendArea">
-        <textarea id="message" placeholder="メッセージを入力..."></textarea>
-        <button id="send" disabled>送信</button>
+        <label>メッセージ内容:
+          <textarea id="message" placeholder="送信したい内容を入力"></textarea>
+        </label>
+        <button id="send" disabled>メッセージ送信</button>
       </div>
     </div>
-  </div>
+  </div>  
 
-  <script>
-    const tokenInput = document.getElementById("token");
-    const refreshTokenInput = document.getElementById("refreshtoken");
-    const loginButton = document.getElementById("login");
-    const chatButtons = document.getElementById("chatButtons");
-    const sendButton = document.getElementById("send");
-    const loadMessagesButton = document.getElementById("loadMessages");
-    const result = document.getElementById("rightPane");
-    const messageInput = document.getElementById("message");
-    const messageCount = document.getElementById("messageCount");
+<script>
+const tokenInput = document.getElementById("token");
+const refreshTokenInput = document.getElementById("refreshtoken");
+const loginButton = document.getElementById("login");
+const chatButtons = document.getElementById("chatButtons");
+const messageInput = document.getElementById("message");
+const sendButton = document.getElementById("send");
+const loadMessagesButton = document.getElementById("loadMessages");
+const result = document.getElementById("rightPane");
+let selectedChatMid = null;
+let lastMessageIds = new Set();
 
-    let selectedChatMid = null;
-    let lastMessageIds = new Set();
+function formatDeliveredTime(deliveredTime) {
+  if (!deliveredTime) return "";
+  const date = new Date(Number(deliveredTime));
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  const seconds = String(date.getSeconds()).padStart(2, '0');
+  return `${hours}:${minutes}:${seconds}`;
+}
 
-    async function callApi(body) {
-      const refreshToken = refreshTokenInput.value.trim();
-      let url = "/";
-      if (refreshToken) url += `?refreshToken=${encodeURIComponent(refreshToken)}`;
-      if (refreshToken) body.refreshToken = refreshToken;
+async function callApi(body) {
+  const refreshToken = refreshTokenInput.value.trim();
+  let url = "/";
+  if (refreshToken) {
+    url += `?refreshToken=${encodeURIComponent(refreshToken)}`;
+    body.refreshToken = refreshToken;
+  }
 
-      const res = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      const data = await res.json();
+  const res = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
 
-      if (data.updatedAuthToken) tokenInput.value = data.updatedAuthToken;
-      if (data.updatedRefreshToken) refreshTokenInput.value = data.updatedRefreshToken;
-      return data;
+  const data = await res.json();
+  if (data.updatedAuthToken) tokenInput.value = data.updatedAuthToken;
+  if (data.updatedRefreshToken) refreshTokenInput.value = data.updatedRefreshToken;
+  if (data.tokenChanged) console.log("トークンが更新されました");
+  return data;
+}
+
+loginButton.onclick = async () => {
+  const token = tokenInput.value.trim();
+  if (!token) return alert("AuthTokenを入力してください");
+
+  try {
+    const data = await callApi({ token, action: "squares" });
+    chatButtons.innerHTML = "";
+    selectedChatMid = null;
+    sendButton.disabled = true;
+    loadMessagesButton.disabled = true;
+    result.textContent = "";
+
+    if (Array.isArray(data.result)) {
+      for (const chat of data.result) {
+        const btn = document.createElement("button");
+        btn.className = "chat-button";
+        btn.textContent = `${chat.name} (${chat.squareChatMid.slice(0, 6)}...)`;
+        btn.onclick = async () => {
+          document.getElementById("chatHeader").textContent = `選択中: ${chat.name}`;
+          selectedChatMid = chat.squareChatMid;
+          sendButton.disabled = false;
+          loadMessagesButton.disabled = false;
+          result.textContent = `選択中: ${chat.name}\n\n過去メッセージを取得中...`;
+          lastMessageIds.clear();
+          await loadMessages(tokenInput.value.trim(), selectedChatMid, true);
+        };
+        chatButtons.appendChild(btn);
+      }
+    } else {
+      result.textContent = JSON.stringify(data.result, null, 2);
+    }
+  } catch (error) {
+    console.error("ログインエラー:", error);
+    alert("ログインに失敗しました");
+  }
+};
+
+async function loadMessages(token, chatMid, scrollToBottom = false) {
+  if (!token || !chatMid) return;
+
+  try {
+    const data = await callApi({ token, action: "messages", squareChatMid: chatMid });
+    if (data.error) {
+      result.textContent = `エラー: ${data.message}`;
+      return;
     }
 
-    loginButton.onclick = async () => {
-      const token = tokenInput.value.trim();
-      if (!token) return alert("AuthTokenを入力してください");
-
-      const data = await callApi({ token, action: "squares" });
-      chatButtons.innerHTML = "";
-      selectedChatMid = null;
-      sendButton.disabled = true;
-      loadMessagesButton.disabled = true;
-      result.innerHTML = "";
-
-      if (Array.isArray(data.result)) {
-        data.result.forEach(chat => {
-          const div = document.createElement("div");
-          div.className = "chat-button";
-          div.innerHTML = `
-            <div class="chat-title">${chat.name}</div>
-            <div class="chat-snippet">${chat.squareChatMid.slice(0, 6)}...</div>
-          `;
-          div.onclick = async () => {
-            selectedChatMid = chat.squareChatMid;
-            sendButton.disabled = false;
-            loadMessagesButton.disabled = false;
-            result.innerHTML = `<div id="chatContent" style="display:flex;flex-direction:column;gap:6px;"></div>`;
-            lastMessageIds.clear();
-            await loadMessages(tokenInput.value.trim(), selectedChatMid, true);
-          };
-          chatButtons.appendChild(div);
-        });
-      } else {
-        result.textContent = JSON.stringify(data.result, null, 2);
-      }
-    };
-
-    async function loadMessages(token, chatMid, scrollToBottom = false) {
-      if (!token || !chatMid) return;
-      const data = await callApi({ token, action: "messages", squareChatMid: chatMid });
-      if (!Array.isArray(data.events)) return;
-
-      const chatContent = document.getElementById("chatContent");
-      let count = 0;
-
-      for (const e of data.events) {
-        const msgData = e.payload?.receiveMessage?.squareMessage?.message ?? e.payload?.sendMessage?.squareMessage?.message;
-        if (!msgData || lastMessageIds.has(msgData.id)) continue;
-
-        lastMessageIds.add(msgData.id);
-        const msgDiv = document.createElement("div");
-        msgDiv.className = `message ${e.type === "SEND_MESSAGE" ? "sent-message" : "received-message"}`;
-        msgDiv.textContent = msgData.text || "（空メッセージ）";
-        chatContent.appendChild(msgDiv);
-        count++;
-      }
-
-      if (scrollToBottom) chatContent.lastElementChild?.scrollIntoView({ behavior: "smooth" });
-      messageCount.textContent = `${lastMessageIds.size}件`;
+    if (!Array.isArray(data.events)) {
+      result.textContent = "データが正しくありません";
+      console.error("Unexpected response format:", data);
+      return;
     }
 
-    sendButton.onclick = async () => {
-      const token = tokenInput.value.trim();
-      const text = messageInput.value.trim();
-      if (!token || !selectedChatMid || !text) return alert("入力が不足しています");
-
-      const data = await callApi({ token, action: "send", squareChatMid: selectedChatMid, text });
-      if (data.message) {
-        messageInput.value = "";
-        await loadMessages(token, selectedChatMid, true);
-      } else {
-        alert("送信に失敗しました");
-      }
-    };
-
-    loadMessagesButton.onclick = async () => {
-      if (!selectedChatMid) return;
-      await loadMessages(tokenInput.value.trim(), selectedChatMid, true);
-    };
-
-    window.addEventListener("DOMContentLoaded", () => {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get("token")) tokenInput.value = params.get("token");
-      if (params.get("refreshToken")) refreshTokenInput.value = params.get("refreshToken");
-      if (tokenInput.value) loginButton.click();
+    const newEvents = data.events.filter(e => {
+      const msg = e.payload?.receiveMessage?.squareMessage?.message ?? e.payload?.sendMessage?.squareMessage?.message;
+      return msg && !lastMessageIds.has(msg.id);
     });
-  </script>
-</body>
+
+    newEvents.forEach(e => {
+      const msg = e.payload?.receiveMessage?.squareMessage?.message ?? e.payload?.sendMessage?.squareMessage?.message;
+      if (msg?.id) lastMessageIds.add(msg.id);
+    });
+
+    if (!document.getElementById("chatContent")) {
+      result.innerHTML = '<div id="chatContent" style="display:flex; flex-direction:column; gap:6px;"></div>';
+    }
+    const chatContent = document.getElementById("chatContent");
+
+    for (const e of newEvents) {
+      const isReceive = e.type === "RECEIVE_MESSAGE";
+      const isSend = e.type === "SEND_MESSAGE";
+      const msgData = e.payload?.receiveMessage?.squareMessage?.message ?? e.payload?.sendMessage?.squareMessage?.message;
+      if (!msgData) continue;
+
+      const from = msgData.from || msgData._from || "?";
+      const text = msgData.text?.trim() || "";
+      const id = msgData.id;
+      const deliveredTime = msgData.deliveredTime;
+
+      const profile = data.profiles?.[from];
+      const displayName = profile?.displayName || from;
+      const pictureStatus = profile?.pictureStatus;
+
+      const msgDiv = document.createElement("div");
+      msgDiv.style.maxWidth = "80%";
+      msgDiv.style.padding = "6px 10px";
+      msgDiv.style.borderRadius = "10px";
+      msgDiv.style.wordBreak = "break-word";
+      msgDiv.style.whiteSpace = "pre-wrap";
+      msgDiv.dataset.messageId = id;
+
+      if (profile && isReceive) {
+        const headerDiv = document.createElement("div");
+        headerDiv.className = "profile-header";
+
+        if (pictureStatus) {
+          const iconImg = document.createElement("img");
+          iconImg.src = `https://obs.line-scdn.net/${pictureStatus}/preview`;
+          iconImg.className = "profile-icon";
+          iconImg.onerror = () => iconImg.style.display = "none";
+          headerDiv.appendChild(iconImg);
+        }
+
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = displayName;
+        headerDiv.appendChild(nameSpan);
+        msgDiv.appendChild(headerDiv);
+      }
+
+      if (msgData.messageRelationType === "REPLY" && msgData.relatedMessageId) {
+        const replyMsgElem = chatContent.querySelector(`[data-message-id="${msgData.relatedMessageId}"]`);
+        if (replyMsgElem) {
+          const replyPreview = document.createElement("div");
+          replyPreview.className = "reply-preview";
+          replyPreview.textContent = replyMsgElem.textContent.slice(0, 30) + (replyMsgElem.textContent.length > 30 ? "..." : "");
+          replyPreview.onclick = () => {
+            replyMsgElem.scrollIntoView({ behavior: "smooth", block: "center" });
+          };
+          msgDiv.appendChild(replyPreview);
+        }
+      }
+
+      if (isSend) {
+        msgDiv.style.alignSelf = "flex-end";
+        msgDiv.style.backgroundColor = "#DCF8C6";
+        msgDiv.style.color = "#000";
+      } else {
+        msgDiv.style.alignSelf = "flex-start";
+        msgDiv.style.backgroundColor = "#fff";
+        msgDiv.style.color = "#000";
+      }
+
+      const textNode = document.createElement("div");
+      textNode.textContent = text;
+      msgDiv.appendChild(textNode);
+
+      if (deliveredTime) {
+        const timeDiv = document.createElement("div");
+        timeDiv.className = "message-time";
+        timeDiv.textContent = formatDeliveredTime(deliveredTime);
+        msgDiv.appendChild(timeDiv);
+      }
+
+      chatContent.appendChild(msgDiv);
+    }
+
+    if (scrollToBottom) {
+      chatContent.lastElementChild?.scrollIntoView({ behavior: "smooth" });
+    }
+  } catch (e) {
+    result.textContent = "メッセージ取得中にエラーが発生しました";
+    console.error(e);
+  }
+}
+
+sendButton.onclick = async () => {
+  const token = tokenInput.value.trim();
+  const text = messageInput.value.trim();
+  if (!token || !selectedChatMid || !text) return alert("全て入力してください");
+
+  try {
+    const data = await callApi({ token, action: "send", squareChatMid: selectedChatMid, text });
+    if (data.message) {
+      messageInput.value = "";
+    } else if (data.error) {
+      alert(`エラー: ${data.message}`);
+    }
+  } catch (error) {
+    console.error("送信エラー:", error);
+    alert("メッセージ送信に失敗しました");
+  }
+};
+
+loadMessagesButton.onclick = async () => {
+  if (!selectedChatMid) return alert("チャットを選択してください");
+  await loadMessages(tokenInput.value.trim(), selectedChatMid, true);
+};
+
+window.addEventListener("DOMContentLoaded", () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const tokenFromUrl = urlParams.get("token");
+  const refreshTokenFromUrl = urlParams.get("refreshToken") || urlParams.get("refresh_token");
+
+  if (tokenFromUrl) tokenInput.value = tokenFromUrl;
+  if (refreshTokenFromUrl) refreshTokenInput.value = refreshTokenFromUrl;
+  if (tokenFromUrl) loginButton.click();
+});
+
+let pollingInterval = null;
+
+function isScrolledToBottom() {
+  const el = document.getElementById("rightPane");
+  return el.scrollHeight - el.scrollTop - el.clientHeight < 5;
+}
+
+function startPolling() {
+  if (pollingInterval) clearInterval(pollingInterval);
+  pollingInterval = setInterval(() => {
+    const token = tokenInput.value.trim();
+    if (token && selectedChatMid) {
+      const autoScroll = isScrolledToBottom();
+      loadMessages(token, selectedChatMid, autoScroll);
+    }
+  }, 1000);
+}
+
+startPolling();
+</script>
+</body>  
 </html>
